@@ -162,7 +162,7 @@ Generate reports for:
 
 ### Django Project Structure
 
-```asm
+```miasm
 project/
 ├── apps/
 │   ├── authentication/
