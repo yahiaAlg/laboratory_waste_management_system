@@ -1,0 +1,381 @@
+/* Custom CSS for Waste Management System */
+
+:root {
+    --primary-color: #4e73df;
+    --secondary-color: #858796;
+    --success-color: #1cc88a;
+    --info-color: #36b9cc;
+    --warning-color: #f6c23e;
+    --danger-color: #e74a3b;
+    --light-color: #f8f9fc;
+    --dark-color: #5a5c69;
+    --sidebar-width: 250px;
+    --navbar-height: 60px;
+}
+
+/* Layout */
+.wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: var(--sidebar-width);
+    background: linear-gradient(180deg, #4e73df 10%, #224abe 100%);
+    color: white;
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+.sidebar-header {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: between;
+    align-items: center;
+}
+
+.sidebar-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.menu-item {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.menu-link {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.menu-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    text-decoration: none;
+}
+
+.menu-link i {
+    width: 20px;
+    margin-right: 0.75rem;
+}
+
+.submenu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.submenu li a {
+    display: block;
+    padding: 0.75rem 1.5rem 0.75rem 3.5rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.submenu li a:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    text-decoration: none;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    min-height: 100vh;
+    background: #f8f9fc;
+    transition: all 0.3s ease;
+}
+
+.content {
+    padding: 1.5rem;
+    margin-top: var(--navbar-height);
+}
+
+/* Top Navbar */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: var(--sidebar-width);
+    right: 0;
+    height: var(--navbar-height);
+    z-index: 999;
+    transition: all 0.3s ease;
+}
+
+/* Cards */
+.card {
+    border: none;
+    border-radius: 0.35rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.card-header {
+    background: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+}
+
+/* Border left cards for dashboard */
+.border-left-primary {
+    border-left: 0.25rem solid var(--primary-color) !important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid var(--success-color) !important;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid var(--info-color) !important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid var(--warning-color) !important;
+}
+
+/* Status badges */
+.badge.bg-draft {
+    background-color: var(--secondary-color) !important;
+}
+
+.badge.bg-sent {
+    background-color: var(--warning-color) !important;
+}
+
+.badge.bg-paid {
+    background-color: var(--success-color) !important;
+}
+
+.badge.bg-overdue {
+    background-color: var(--danger-color) !important;
+}
+
+.badge.bg-cancelled {
+    background-color: var(--dark-color) !important;
+}
+
+/* Tables */
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: var(--dark-color);
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(78, 115, 223, 0.05);
+}
+
+/* Buttons */
+.btn {
+    border-radius: 0.35rem;
+    font-weight: 400;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #2653d4;
+    border-color: #2653d4;
+}
+
+/* Forms */
+.form-control, .form-select {
+    border-radius: 0.35rem;
+    border: 1px solid #d1d3e2;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+}
+
+/* Alerts */
+.alert {
+    border-radius: 0.35rem;
+    border: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .sidebar {
+        margin-left: -var(--sidebar-width);
+    }
+    
+    .sidebar.show {
+        margin-left: 0;
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+    
+    .navbar {
+        left: 0;
+    }
+    
+    .content {
+        padding: 1rem;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .sidebar,
+    .navbar,
+    .no-print {
+        display: none !important;
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+    
+    .content {
+        margin-top: 0;
+        padding: 0;
+    }
+}
+
+/* Custom utilities */
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+
+.font-weight-bold {
+    font-weight: 700 !important;
+}
+
+.text-xs {
+    font-size: 0.7rem;
+}
+
+.text-uppercase {
+    text-transform: uppercase !important;
+}
+
+/* Animation */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Loading spinner */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Custom scrollbar */
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Invoice specific styles */
+.invoice-line-row.deleted {
+    opacity: 0.5;
+    text-decoration: line-through;
+}
+
+.line-total {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* Dashboard specific styles */
+.metric-card {
+    transition: transform 0.2s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Status indicators */
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.5rem;
+}
+
+.status-indicator.active {
+    background-color: var(--success-color);
+}
+
+.status-indicator.inactive {
+    background-color: var(--danger-color);
+}
+
+.status-indicator.pending {
+    background-color: var(--warning-color);
+}
+
+/* Avatar */
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+}
+
+/* Custom dropdown */
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+/* Page transitions */
+.page-content {
+    animation: slideInUp 0.3s ease;
+}
+
+@keyframes slideInUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}

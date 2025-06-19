@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Liste des clients{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Liste des clients</h1>
+        <a href="{% url 'customers:create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Nouveau client
+        </a>
+    </div>
+    
+    <!-- Search and Filters -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" name="search" class="form-control" placeholder="Rechercher par nom, email ou téléphone..." value="{{ search_query }}">
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="fas fa-search me-1"></i>Rechercher
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Customers Table -->
+    <div class="card shadow">
+        <div class="card-body">
+            {% if page_obj %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nom/Raison sociale</th>
+                                <th>Type</th>
+                                <th>Ville</th>
+                                <th>Téléphone</th>
+                                <th>Email</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for customer in page_obj %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'customers:detail' customer.pk %}" class="fw-semibold">
+                                        {{ customer.name }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if customer.customer_type == 'company' %}primary{% else %}secondary{% endif %}">
+                                        {{ customer.get_customer_type_display }}
+                                    </span>
+                                </td>
+                                <td>{{ customer.city }}</td>
+                                <td>{{ customer.phone|default:"-" }}</td>
+                                <td>{{ customer.email|default:"-" }}</td>
+                                <td>
+                                    <span class="status-indicator {% if customer.is_active %}active{% else %}inactive{% endif %}"></span>
+                                    {% if customer.is_active %}Actif{% else %}Inactif{% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'customers:detail' customer.pk %}" class="btn btn-outline-primary" title="Voir">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'customers:update' customer.pk %}" class="btn btn-outline-secondary" title="Modifier">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'customers:delete' customer.pk %}" class="btn btn-outline-danger" title="Supprimer" 
+                                           data-confirm-delete="Êtes-vous sûr de vouloir supprimer ce client ?">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">&lsaquo;&lsaquo;</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">&lsaquo;</a>
+                            </li>
+                        {% endif %}
+                        
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}</span>
+                        </li>
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">&rsaquo;</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">&rsaquo;&rsaquo;</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Aucun client trouvé</h5>
+                    <p class="text-muted">Commencez par ajouter votre premier client.</p>
+                    <a href="{% url 'customers:create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Ajouter un client
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

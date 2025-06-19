@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Rapport clients{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Rapport clients</h1>
+        <a href="{% url 'reports:index' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Retour aux rapports
+        </a>
+    </div>
+    
+    <!-- Customers Table -->
+    <div class="card shadow">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Analyse par client</h6>
+        </div>
+        <div class="card-body">
+            {% if customers %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Client</th>
+                                <th>Type</th>
+                                <th>Ville</th>
+                                <th>Nb factures</th>
+                                <th>CA total</th>
+                                <th>Créances</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for customer in customers %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'customers:detail' customer.pk %}" class="fw-semibold">
+                                        {{ customer.name }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if customer.customer_type == 'company' %}primary{% else %}secondary{% endif %}">
+                                        {{ customer.get_customer_type_display }}
+                                    </span>
+                                </td>
+                                <td>{{ customer.city }}</td>
+                                <td>{{ customer.invoice_count|default:0 }}</td>
+                                <td>{{ customer.total_revenue|default:0|floatformat:2|intcomma }} DA</td>
+                                <td>
+                                    {% if customer.outstanding_balance %}
+                                        <span class="text-danger">{{ customer.outstanding_balance|floatformat:2|intcomma }} DA</span>
+                                    {% else %}
+                                        <span class="text-success">0.00 DA</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="status-indicator {% if customer.is_active %}active{% else %}inactive{% endif %}"></span>
+                                    {% if customer.is_active %}Actif{% else %}Inactif{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted text-center">Aucun client trouvé</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

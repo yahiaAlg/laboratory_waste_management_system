@@ -1,0 +1,310 @@
+{% extends 'base.html' %}
+
+{% block title %}Paramètres de l'entreprise{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Paramètres de l'entreprise</h1>
+    </div>
+    
+    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+        {% csrf_token %}
+        
+        <div class="row">
+            <!-- Company Information -->
+            <div class="col-lg-8">
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Informations générales</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }} *</label>
+                                    {{ form.name }}
+                                    {% if form.name.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.logo.id_for_label }}" class="form-label">{{ form.logo.label }}</label>
+                                    {{ form.logo }}
+                                    {% if form.logo.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.logo.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.business_description.id_for_label }}" class="form-label">{{ form.business_description.label }}</label>
+                            {{ form.business_description }}
+                            {% if form.business_description.errors %}
+                                <div class="invalid-feedback d-block">{{ form.business_description.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Address Information -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Adresse</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="{{ form.address_line1.id_for_label }}" class="form-label">{{ form.address_line1.label }} *</label>
+                            {{ form.address_line1 }}
+                            {% if form.address_line1.errors %}
+                                <div class="invalid-feedback d-block">{{ form.address_line1.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.address_line2.id_for_label }}" class="form-label">{{ form.address_line2.label }}</label>
+                            {{ form.address_line2 }}
+                            {% if form.address_line2.errors %}
+                                <div class="invalid-feedback d-block">{{ form.address_line2.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.city.id_for_label }}" class="form-label">{{ form.city.label }} *</label>
+                                    {{ form.city }}
+                                    {% if form.city.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.city.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="{{ form.postal_code.id_for_label }}" class="form-label">{{ form.postal_code.label }} *</label>
+                                    {{ form.postal_code }}
+                                    {% if form.postal_code.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.postal_code.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="{{ form.state.id_for_label }}" class="form-label">{{ form.state.label }}</label>
+                                    {{ form.state }}
+                                    {% if form.state.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.state.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Contact Information -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Contact</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.phone.id_for_label }}" class="form-label">{{ form.phone.label }}</label>
+                                    {{ form.phone }}
+                                    {% if form.phone.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.phone.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.fax.id_for_label }}" class="form-label">{{ form.fax.label }}</label>
+                                    {{ form.fax }}
+                                    {% if form.fax.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.fax.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.email.id_for_label }}" class="form-label">{{ form.email.label }}</label>
+                                    {{ form.email }}
+                                    {% if form.email.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.email.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.website.id_for_label }}" class="form-label">{{ form.website.label }}</label>
+                            {{ form.website }}
+                            {% if form.website.errors %}
+                                <div class="invalid-feedback d-block">{{ form.website.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Legal Information -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Informations légales</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.capital_social.id_for_label }}" class="form-label">{{ form.capital_social.label }}</label>
+                                    <div class="input-group">
+                                        {{ form.capital_social }}
+                                        <span class="input-group-text">DA</span>
+                                    </div>
+                                    {% if form.capital_social.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.capital_social.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.rib.id_for_label }}" class="form-label">{{ form.rib.label }}</label>
+                                    {{ form.rib }}
+                                    {% if form.rib.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.rib.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="{{ form.rc.id_for_label }}" class="form-label">{{ form.rc.label }}</label>
+                                    {{ form.rc }}
+                                    {% if form.rc.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.rc.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="{{ form.art.id_for_label }}" class="form-label">{{ form.art.label }}</label>
+                                    {{ form.art }}
+                                    {% if form.art.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.art.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="{{ form.nis.id_for_label }}" class="form-label">{{ form.nis.label }}</label>
+                                    {{ form.nis }}
+                                    {% if form.nis.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.nis.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="{{ form.nif.id_for_label }}" class="form-label">{{ form.nif.label }}</label>
+                                    {{ form.nif }}
+                                    {% if form.nif.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.nif.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tax and Invoice Settings -->
+            <div class="col-lg-4">
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Paramètres fiscaux</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="{{ form.tva_rate.id_for_label }}" class="form-label">{{ form.tva_rate.label }}</label>
+                            <div class="input-group">
+                                {{ form.tva_rate }}
+                                <span class="input-group-text">%</span>
+                            </div>
+                            {% if form.tva_rate.errors %}
+                                <div class="invalid-feedback d-block">{{ form.tva_rate.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.timbre_fiscal.id_for_label }}" class="form-label">{{ form.timbre_fiscal.label }}</label>
+                            <div class="input-group">
+                                {{ form.timbre_fiscal }}
+                                <span class="input-group-text">DA</span>
+                            </div>
+                            {% if form.timbre_fiscal.errors %}
+                                <div class="invalid-feedback d-block">{{ form.timbre_fiscal.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Paramètres de facturation</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="{{ form.invoice_prefix.id_for_label }}" class="form-label">{{ form.invoice_prefix.label }}</label>
+                            {{ form.invoice_prefix }}
+                            {% if form.invoice_prefix.errors %}
+                                <div class="invalid-feedback d-block">{{ form.invoice_prefix.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">Préfixe utilisé pour la numérotation des factures</div>
+                        </div>
+                        
+                        {% if company %}
+                        <div class="alert alert-info">
+                            <small>
+                                <strong>Prochain numéro :</strong> {{ company.invoice_prefix }}{{ company.next_invoice_number|stringformat:"05d" }}
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Logo Preview -->
+                {% if company.logo %}
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Logo actuel</h6>
+                    </div>
+                    <div class="card-body text-center">
+                        <img src="{{ company.logo.url }}" alt="Logo" class="img-thumbnail" style="max-width: 200px;">
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Actions -->
+                <div class="card shadow">
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Enregistrer les modifications
+                            </button>
+                            <a href="{% url 'dashboard:index' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Retour au tableau de bord
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

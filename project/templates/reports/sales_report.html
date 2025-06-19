@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Rapport des ventes{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Rapport des ventes</h1>
+        <a href="{% url 'reports:index' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Retour aux rapports
+        </a>
+    </div>
+    
+    <!-- Date Filter -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="start_date" class="form-label">Date de début</label>
+                    <input type="date" name="start_date" class="form-control" value="{{ start_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="end_date" class="form-label">Date de fin</label>
+                    <input type="date" name="end_date" class="form-control" value="{{ end_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">&nbsp;</label>
+                    <div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter me-1"></i>Filtrer
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Summary Cards -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Chiffre d'affaires
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ total_revenue|floatformat:2|intcomma }} DA
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-euro-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Nombre de factures
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_invoices }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-file-invoice fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Facture moyenne
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ average_invoice|floatformat:2|intcomma }} DA
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calculator fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Période
+                            </div>
+                            <div class="h6 mb-0 font-weight-bold text-gray-800">
+                                {{ start_date|date:"d/m/Y" }} - {{ end_date|date:"d/m/Y" }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Invoices List -->
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Factures de la période</h6>
+                </div>
+                <div class="card-body">
+                    {% if invoices %}
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Numéro</th>
+                                        <th>Date</th>
+                                        <th>Client</th>
+                                        <th>Total TTC</th>
+                                        <th>Statut</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for invoice in invoices %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'invoices:detail' invoice.pk %}">
+                                                {{ invoice.invoice_number }}
+                                            </a>
+                                        </td>
+                                        <td>{{ invoice.invoice_date|date:"d/m/Y" }}</td>
+                                        <td>{{ invoice.customer.name|truncatechars:30 }}</td>
+                                        <td>{{ invoice.total_ttc|floatformat:2|intcomma }} DA</td>
+                                        <td>
+                                            <span class="badge bg-{% if invoice.status == 'paid' %}success{% elif invoice.status == 'overdue' %}danger{% else %}warning{% endif %}">
+                                                {{ invoice.get_status_display }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center">Aucune facture pour cette période</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top Customers -->
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Meilleurs clients (période)</h6>
+                </div>
+                <div class="card-body">
+                    {% if top_customers %}
+                        {% for customer in top_customers %}
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <a href="{% url 'customers:detail' customer.pk %}" class="fw-semibold">
+                                    {{ customer.name|truncatechars:25 }}
+                                </a>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-semibold">{{ customer.period_revenue|floatformat:2|intcomma }} DA</div>
+                            </div>
+                        </div>
+                        {% if not forloop.last %}<hr>{% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center">Aucun client pour cette période</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facture {{ invoice.invoice_number }}</title>
+    <style>
+        @media print {
+            body { margin: 0; }
+            .no-print { display: none; }
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            margin: 20px;
+        }
+        
+        .invoice-header {
+            border: 2px solid #000;
+            margin-bottom: 20px;
+        }
+        
+        .company-info {
+            display: flex;
+            padding: 10px;
+        }
+        
+        .logo-section {
+            width: 150px;
+            text-align: center;
+            border-right: 1px solid #000;
+            padding-right: 10px;
+        }
+        
+        .company-details {
+            flex: 1;
+            padding-left: 15px;
+        }
+        
+        .company-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .company-activity {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .legal-info {
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid #000;
+            padding: 10px;
+            font-size: 10px;
+        }
+        
+        .client-section {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        
+        .client-info {
+            flex: 1;
+            border: 1px solid #000;
+            padding: 10px;
+            margin-right: 10px;
+        }
+        
+        .invoice-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            border: 2px solid #000;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .invoice-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 11px;
+        }
+        
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .invoice-table th,
+        .invoice-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+        }
+        
+        .invoice-table th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        
+        .totals-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        .notes-section {
+            width: 60%;
+            border: 1px solid #000;
+            padding: 10px;
+            min-height: 100px;
+        }
+        
+        .totals-table {
+            width: 35%;
+        }
+        
+        .totals-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .totals-table td {
+            border: 1px solid #000;
+            padding: 5px;
+        }
+        
+        .totals-table .total-row {
+            font-weight: bold;
+            background-color: #f0f0f0;
+        }
+        
+        .logistics-info {
+            margin-top: 20px;
+            font-size: 11px;
+        }
+        
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <button onclick="window.print()" class="print-button no-print" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
+        Imprimer
+    </button>
+    
+    <!-- Invoice Header -->
+    <div class="invoice-header">
+        <div class="company-info">
+            <div class="logo-section">
+                {% if company.logo %}
+                    <img src="{{ company.logo.url }}" alt="Logo" style="max-width: 120px; max-height: 80px;">
+                {% else %}
+                    <div style="width: 120px; height: 80px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; background: #f8f9fa;">
+                        <i class="fas fa-recycle" style="font-size: 30px; color: #28a745;"></i>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="company-details">
+                <div class="company-name">{{ company.name|default:"CHABANI HIND" }}</div>
+                <div class="company-activity">{{ company.business_description|default:"COLLECTE DES DECHETS SPECIAUX DANGEREUX" }}</div>
+                <div style="margin-top: 10px;">
+                    {{ company.full_address|default:"LIEU-DITE ABDELBAK NORD SEC 16 GRP 64 RDC" }}<br>
+                    Email : {{ company.email|default:"yahiaouiouali81@gmail.co" }} &nbsp;&nbsp;&nbsp; Tél. : {{ company.phone|default:"0770 64 44 45" }} Fax :
+                </div>
+            </div>
+        </div>
+        
+        <div class="legal-info">
+            <div>
+                <strong>CAPITAL SOCIAL :</strong> {{ company.capital_social|default:"0.00" }} DA<br>
+                <strong>RC :</strong> {{ company.rc|default:"245347252-00/19" }}<br>
+                <strong>ART :</strong> {{ company.art|default:"19268013021" }}
+            </div>
+            <div>
+                <strong>NIS :</strong> {{ company.nis|default:"-" }}<br>
+                <strong>NIF :</strong> {{ company.nif|default:"287192003836112" }}<br>
+                <strong>RIB :</strong> {{ company.rib|default:"021008021130066486573" }}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Client Section -->
+    <div class="client-section">
+        <div class="client-info">
+            <strong>Client</strong><br>
+            <strong>{{ invoice.customer.name }}</strong><br><br>
+            <strong>Adresse :</strong> {{ invoice.customer.full_address }}<br><br>
+            <strong>Activité :</strong> {{ invoice.customer.activity|default:"PHARMACIE" }}<br><br>
+            <strong>NIS :</strong> {{ invoice.customer.nis|default:"298910380108134" }} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <strong>RC :</strong> {{ invoice.customer.rc|default:"14A2867534-00/28" }}<br>
+            <strong>NIF :</strong> {{ invoice.customer.nif|default:"289103801081114" }} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <strong>ART :</strong> {{ invoice.customer.art|default:"28160764911" }}
+        </div>
+    </div>
+    
+    <!-- Invoice Title -->
+    <div class="invoice-title">F A C T U R E</div>
+    
+    <!-- Invoice Details -->
+    <div class="invoice-details">
+        <div>
+            <strong>N° Facture:</strong> {{ invoice.invoice_number }}<br>
+            <strong>Date:</strong> {{ invoice.invoice_date|date:"d/m/Y" }}<br>
+            <strong>DATE D'ECHEANCE:</strong> {{ invoice.due_date|date:"d/m/Y" }}
+        </div>
+        <div>
+            <strong>M. Règlement:</strong> {{ invoice.get_payment_method_display }}<br>
+            <strong>Références règlement:</strong><br>
+            <strong>Page:</strong> 1/1
+        </div>
+    </div>
+    
+    <!-- Invoice Table -->
+    <table class="invoice-table">
+        <thead>
+            <tr>
+                <th>REF.</th>
+                <th>DESIGNATIONS</th>
+                <th>UNITE</th>
+                <th>QTE</th>
+                <th>Prix U HT</th>
+                <th>MONTANT HT</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for line in invoice.invoiceline_set.all %}
+            <tr>
+                <td>{{ line.reference|default:"4-1 SPA" }}</td>
+                <td style="text-align: left;">{{ line.description }}</td>
+                <td>{{ line.unit }}</td>
+                <td>{{ line.quantity }}</td>
+                <td>{{ line.unit_price|floatformat:2 }}</td>
+                <td>{{ line.line_total|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <!-- Totals Section -->
+    <div class="totals-section">
+        <div class="notes-section">
+            <strong>Arrêtée la présente facture en toutes taxes à la somme de</strong><br><br>
+            <em>{{ invoice.total_ttc|floatformat:2 }} Dinars Algériens</em><br><br>
+            {% if invoice.notes %}
+                {{ invoice.notes|linebreaks }}
+            {% endif %}
+        </div>
+        
+        <div class="totals-table">
+            <table>
+                <tr>
+                    <td><strong>T O T A L &nbsp; H.T.</strong></td>
+                    <td style="text-align: right;"><strong>{{ invoice.subtotal_ht|floatformat:2 }}</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>T O T A L &nbsp; T.V.A.</strong></td>
+                    <td style="text-align: right;"><strong>{{ invoice.tva_amount|floatformat:2 }}</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>T O T A L &nbsp; T.T.C.</strong></td>
+                    <td style="text-align: right;"><strong>{{ invoice.total_ttc|floatformat:2 }}</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>TIMBRE</strong></td>
+                    <td style="text-align: right;"><strong>{{ invoice.timbre_fiscal|floatformat:2 }}</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>AUTRES TAXES</strong></td>
+                    <td style="text-align: right;"><strong>{{ invoice.other_taxes|floatformat:2 }}</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>REMISE</strong></td>
+                    <td style="text-align: right;"><strong>{{ invoice.discount_amount|floatformat:2 }}</strong></td>
+                </tr>
+                <tr class="total-row">
+                    <td><strong>TOTAL FACTURE</strong></td>
+                    <td style="text-align: right;"><strong>{{ invoice.total_ttc|floatformat:2 }}</strong></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Logistics Information -->
+    <div class="logistics-info">
+        {% if invoice.driver_name or invoice.vehicle_registration or invoice.destination %}
+        <div style="margin-top: 30px;">
+            <strong>Chauffeur :</strong> {{ invoice.driver_name|default:"" }}<br>
+            <strong>Matricule :</strong> {{ invoice.vehicle_registration|default:"" }}<br>
+            <strong>Destination :</strong> {{ invoice.destination|default:"" }}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

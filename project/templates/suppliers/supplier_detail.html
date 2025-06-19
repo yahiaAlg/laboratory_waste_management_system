@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}{{ supplier.name }} - Détails du fournisseur{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ supplier.name }}</h1>
+        <div>
+            <a href="{% url 'suppliers:update' supplier.pk %}" class="btn btn-primary me-2">
+                <i class="fas fa-edit me-2"></i>Modifier
+            </a>
+            <a href="{% url 'suppliers:list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Supplier Information -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Informations générales</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="fw-semibold">Nom/Raison sociale:</td>
+                                    <td>{{ supplier.name }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Personne de contact:</td>
+                                    <td>{{ supplier.contact_person|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Téléphone:</td>
+                                    <td>{{ supplier.phone|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Fax:</td>
+                                    <td>{{ supplier.fax|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Email:</td>
+                                    <td>{{ supplier.email|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Site web:</td>
+                                    <td>
+                                        {% if supplier.website %}
+                                            <a href="{{ supplier.website }}" target="_blank">{{ supplier.website }}</a>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="fw-semibold">Adresse:</td>
+                                    <td>{{ supplier.full_address }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">RC:</td>
+                                    <td>{{ supplier.rc|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">NIS:</td>
+                                    <td>{{ supplier.nis|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">NIF:</td>
+                                    <td>{{ supplier.nif|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Évaluation:</td>
+                                    <td>
+                                        <div class="text-warning">
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= supplier.rating %}
+                                                    <i class="fas fa-star"></i>
+                                                {% else %}
+                                                    <i class="far fa-star"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                            ({{ supplier.rating }}/5)
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Statut:</td>
+                                    <td>
+                                        <span class="status-indicator {% if supplier.is_active %}active{% else %}inactive{% endif %}"></span>
+                                        {% if supplier.is_active %}Actif{% else %}Inactif{% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    {% if supplier.services_provided %}
+                    <div class="mt-3">
+                        <h6 class="fw-semibold">Services fournis:</h6>
+                        <p>{{ supplier.services_provided }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Contract Information -->
+            {% if supplier.contract_start_date or supplier.contract_end_date %}
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Informations contractuelles</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="text-center">
+                                <h6 class="text-primary">{{ supplier.contract_start_date|date:"d/m/Y"|default:"-" }}</h6>
+                                <small class="text-muted">Date de début</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-center">
+                                <h6 class="text-info">{{ supplier.contract_end_date|date:"d/m/Y"|default:"-" }}</h6>
+                                <small class="text-muted">Date de fin</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Actions rapides</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'suppliers:update' supplier.pk %}" class="btn btn-primary">
+                            <i class="fas fa-edit me-2"></i>Modifier les informations
+                        </a>
+                        <a href="#" class="btn btn-info">
+                            <i class="fas fa-chart-bar me-2"></i>Voir les statistiques
+                        </a>
+                        <a href="{% url 'suppliers:delete' supplier.pk %}" class="btn btn-danger" 
+                           data-confirm-delete="Êtes-vous sûr de vouloir supprimer ce fournisseur ?">
+                            <i class="fas fa-trash me-2"></i>Supprimer le fournisseur
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Commercial Settings -->
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Paramètres commerciaux</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <h5 class="text-primary">{{ supplier.payment_terms }} jours</h5>
+                        <small class="text-muted">Délai de paiement</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

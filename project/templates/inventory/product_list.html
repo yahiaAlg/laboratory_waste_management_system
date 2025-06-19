@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Liste des produits/services{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Produits et Services</h1>
+        <a href="{% url 'inventory:product_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Nouveau produit/service
+        </a>
+    </div>
+    
+    <!-- Search and Filters -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" name="search" class="form-control" placeholder="Rechercher..." value="{{ search_query }}">
+                </div>
+                <div class="col-md-3">
+                    <select name="category" class="form-select">
+                        <option value="">Toutes les catégories</option>
+                        {% for category in categories %}
+                        <option value="{{ category.pk }}" {% if category_filter == category.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="fas fa-search me-1"></i>Filtrer
+                    </button>
+                </div>
+                <div class="col-md-3">
+                    <a href="{% url 'inventory:low_stock_report' %}" class="btn btn-outline-warning">
+                        <i class="fas fa-exclamation-triangle me-1"></i>Stock faible
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Products Table -->
+    <div class="card shadow">
+        <div class="card-body">
+            {% if page_obj %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Code</th>
+                                <th>Nom</th>
+                                <th>Catégorie</th>
+                                <th>Prix unitaire</th>
+                                <th>Stock</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in page_obj %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'inventory:product_detail' product.pk %}" class="fw-semibold">
+                                        {{ product.code }}
+                                    </a>
+                                </td>
+                                <td>{{ product.name|truncatechars:40 }}</td>
+                                <td>{{ product.category.name }}</td>
+                                <td>{{ product.unit_price|floatformat:2|intcomma }} DA</td>
+                                <td>
+                                    {% if product.is_service %}
+                                        <span class="badge bg-info">Service</span>
+                                    {% else %}
+                                        <span class="{% if product.is_low_stock %}text-danger fw-bold{% endif %}">
+                                            {{ product.stock_quantity }} {{ product.unit }}
+                                        </span>
+                                        {% if product.is_low_stock %}
+                                            <i class="fas fa-exclamation-triangle text-warning ms-1" title="Stock faible"></i>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="status-indicator {% if product.is_active %}active{% else %}inactive{% endif %}"></span>
+                                    {% if product.is_active %}Actif{% else %}Inactif{% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'inventory:product_detail' product.pk %}" class="btn btn-outline-primary" title="Voir">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'inventory:product_update' product.pk %}" class="btn btn-outline-secondary" title="Modifier">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% if not product.is_service %}
+                                        <a href="{% url 'inventory:stock_movement_create_for_product' product.pk %}" class="btn btn-outline-success" title="Mouvement de stock">
+                                            <i class="fas fa-exchange-alt"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">&lsaquo;&lsaquo;</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">&lsaquo;</a>
+                            </li>
+                        {% endif %}
+                        
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}</span>
+                        </li>
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">&rsaquo;</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">&rsaquo;&rsaquo;</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-boxes fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Aucun produit/service trouvé</h5>
+                    <p class="text-muted">Commencez par ajouter votre premier produit ou service.</p>
+                    <a href="{% url 'inventory:product_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Ajouter un produit/service
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

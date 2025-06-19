@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}{{ product.name }} - Détails du produit{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ product.name }}</h1>
+        <div>
+            <a href="{% url 'inventory:product_update' product.pk %}" class="btn btn-primary me-2">
+                <i class="fas fa-edit me-2"></i>Modifier
+            </a>
+            <a href="{% url 'inventory:product_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Product Information -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Informations générales</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="fw-semibold">Code:</td>
+                                    <td>{{ product.code }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Nom:</td>
+                                    <td>{{ product.name }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Catégorie:</td>
+                                    <td>{{ product.category.name }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Prix unitaire:</td>
+                                    <td>{{ product.unit_price|floatformat:2|intcomma }} DA</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Unité:</td>
+                                    <td>{{ product.get_unit_display }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Type:</td>
+                                    <td>
+                                        <span class="badge bg-{% if product.is_service %}info{% else %}primary{% endif %}">
+                                            {% if product.is_service %}Service{% else %}Produit{% endif %}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                {% if not product.is_service %}
+                                <tr>
+                                    <td class="fw-semibold">Stock actuel:</td>
+                                    <td>
+                                        <span class="{% if product.is_low_stock %}text-danger fw-bold{% endif %}">
+                                            {{ product.stock_quantity }} {{ product.unit }}
+                                        </span>
+                                        {% if product.is_low_stock %}
+                                            <i class="fas fa-exclamation-triangle text-warning ms-1" title="Stock faible"></i>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Stock minimum:</td>
+                                    <td>{{ product.minimum_stock }} {{ product.unit }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Niveau de danger:</td>
+                                    <td>
+                                        <span class="badge bg-{% if product.hazard_level == 'critical' %}danger{% elif product.hazard_level == 'high' %}warning{% elif product.hazard_level == 'medium' %}info{% else %}secondary{% endif %}">
+                                            {{ product.get_hazard_level_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <td class="fw-semibold">Statut:</td>
+                                    <td>
+                                        <span class="status-indicator {% if product.is_active %}active{% else %}inactive{% endif %}"></span>
+                                        {% if product.is_active %}Actif{% else %}Inactif{% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Créé le:</td>
+                                    <td>{{ product.created_at|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Modifié le:</td>
+                                    <td>{{ product.updated_at|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    {% if product.description %}
+                    <div class="mt-3">
+                        <h6 class="fw-semibold">Description:</h6>
+                        <p>{{ product.description }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if not product.is_service %}
+            <!-- Waste-specific Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Informations spécifiques aux déchets</h6>
+                </div>
+                <div class="card-body">
+                    {% if product.storage_requirements %}
+                    <div class="mb-3">
+                        <h6 class="fw-semibold">Exigences de stockage:</h6>
+                        <p>{{ product.storage_requirements }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if product.handling_instructions %}
+                    <div class="mb-3">
+                        <h6 class="fw-semibold">Instructions de manipulation:</h6>
+                        <p>{{ product.handling_instructions }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Recent Stock Movements -->
+            <div class="card shadow">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Mouvements de stock récents</h6>
+                    <a href="{% url 'inventory:stock_movement_create_for_product' product.pk %}" class="btn btn-sm btn-success">
+                        <i class="fas fa-plus me-1"></i>Nouveau mouvement
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if recent_movements %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Quantité</th>
+                                        <th>Référence</th>
+                                        <th>Créé par</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for movement in recent_movements %}
+                                    <tr>
+                                        <td>{{ movement.date|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            <span class="badge bg-{% if movement.movement_type == 'in' %}success{% elif movement.movement_type == 'out' %}danger{% else %}info{% endif %}">
+                                                {{ movement.get_movement_type_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ movement.quantity }} {{ product.unit }}</td>
+                                        <td>{{ movement.reference|default:"-" }}</td>
+                                        <td>{{ movement.created_by.get_full_name|default:movement.created_by.username }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center">Aucun mouvement de stock</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Actions rapides</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'inventory:product_update' product.pk %}" class="btn btn-primary">
+                            <i class="fas fa-edit me-2"></i>Modifier le produit
+                        </a>
+                        {% if not product.is_service %}
+                        <a href="{% url 'inventory:stock_movement_create_for_product' product.pk %}" class="btn btn-success">
+                            <i class="fas fa-exchange-alt me-2"></i>Mouvement de stock
+                        </a>
+                        {% endif %}
+                        <a href="#" class="btn btn-info">
+                            <i class="fas fa-chart-bar me-2"></i>Voir les statistiques
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            {% if not product.is_service %}
+            <!-- Stock Status -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">État du stock</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <h3 class="{% if product.is_low_stock %}text-danger{% else %}text-success{% endif %}">
+                            {{ product.stock_quantity }} {{ product.unit }}
+                        </h3>
+                        <p class="text-muted">Stock actuel</p>
+                    </div>
+                    
+                    <div class="progress mb-3" style="height: 20px;">
+                        {% widthratio product.stock_quantity product.minimum_stock 100 as stock_percentage %}
+                        <div class="progress-bar {% if product.is_low_stock %}bg-danger{% else %}bg-success{% endif %}" 
+                             style="width: {% if stock_percentage > 100 %}100{% else %}{{ stock_percentage }}{% endif %}%">
+                            {{ stock_percentage }}%
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">Min: {{ product.minimum_stock }} {{ product.unit }}</small>
+                        <small class="text-muted">{{ product.stock_status }}</small>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

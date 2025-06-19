@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Rapport financier{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Rapport financier</h1>
+        <a href="{% url 'reports:index' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Retour aux rapports
+        </a>
+    </div>
+    
+    <!-- Date Filter -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="start_date" class="form-label">Date de début</label>
+                    <input type="date" name="start_date" class="form-control" value="{{ start_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="end_date" class="form-label">Date de fin</label>
+                    <input type="date" name="end_date" class="form-control" value="{{ end_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">&nbsp;</label>
+                    <div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter me-1"></i>Filtrer
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Financial Summary -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total facturé
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ total_invoiced|floatformat:2|intcomma }} DA
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-file-invoice fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total encaissé
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ total_collected|floatformat:2|intcomma }} DA
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-money-bill fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Créances
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ total_outstanding|floatformat:2|intcomma }} DA
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                TVA collectée
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ total_tva|floatformat:2|intcomma }} DA
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-percentage fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Period Invoices -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Factures de la période</h6>
+                </div>
+                <div class="card-body">
+                    {% if period_invoices %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Numéro</th>
+                                        <th>Date</th>
+                                        <th>Total HT</th>
+                                        <th>TVA</th>
+                                        <th>Total TTC</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for invoice in period_invoices|slice:":10" %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'invoices:detail' invoice.pk %}">
+                                                {{ invoice.invoice_number }}
+                                            </a>
+                                        </td>
+                                        <td>{{ invoice.invoice_date|date:"d/m/Y" }}</td>
+                                        <td>{{ invoice.subtotal_ht|floatformat:2 }} DA</td>
+                                        <td>{{ invoice.tva_amount|floatformat:2 }} DA</td>
+                                        <td>{{ invoice.total_ttc|floatformat:2 }} DA</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% if period_invoices.count > 10 %}
+                        <div class="text-center">
+                            <small class="text-muted">... et {{ period_invoices.count|add:"-10" }} autres factures</small>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted text-center">Aucune facture pour cette période</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Period Payments -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Paiements de la période</h6>
+                </div>
+                <div class="card-body">
+                    {% if period_payments %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Facture</th>
+                                        <th>Montant</th>
+                                        <th>Mode</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for payment in period_payments|slice:":10" %}
+                                    <tr>
+                                        <td>{{ payment.payment_date|date:"d/m/Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'invoices:detail' payment.invoice.pk %}">
+                                                {{ payment.invoice.invoice_number }}
+                                            </a>
+                                        </td>
+                                        <td>{{ payment.amount|floatformat:2 }} DA</td>
+                                        <td>{{ payment.get_payment_method_display }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% if period_payments.count > 10 %}
+                        <div class="text-center">
+                            <small class="text-muted">... et {{ period_payments.count|add:"-10" }} autres paiements</small>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted text-center">Aucun paiement pour cette période</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

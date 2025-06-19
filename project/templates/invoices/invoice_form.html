@@ -1,0 +1,360 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <a href="{% url 'invoices:list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+        </a>
+    </div>
+    
+    <form method="post" id="invoiceForm">
+        {% csrf_token %}
+        
+        <div class="row">
+            <!-- Invoice Details -->
+            <div class="col-lg-8">
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Informations de la facture</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.customer.id_for_label }}" class="form-label">{{ form.customer.label }}</label>
+                                    {{ form.customer }}
+                                    {% if form.customer.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.customer.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="{{ form.invoice_date.id_for_label }}" class="form-label">{{ form.invoice_date.label }}</label>
+                                    {{ form.invoice_date }}
+                                    {% if form.invoice_date.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.invoice_date.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="{{ form.due_date.id_for_label }}" class="form-label">{{ form.due_date.label }}</label>
+                                    {{ form.due_date }}
+                                    {% if form.due_date.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.due_date.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.payment_method.id_for_label }}" class="form-label">{{ form.payment_method.label }}</label>
+                                    {{ form.payment_method }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.driver_name.id_for_label }}" class="form-label">{{ form.driver_name.label }}</label>
+                                    {{ form.driver_name }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.vehicle_registration.id_for_label }}" class="form-label">{{ form.vehicle_registration.label }}</label>
+                                    {{ form.vehicle_registration }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label for="{{ form.destination.id_for_label }}" class="form-label">{{ form.destination.label }}</label>
+                                    {{ form.destination }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Invoice Lines -->
+                <div class="card shadow mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Lignes de facture</h6>
+                        <button type="button" class="btn btn-sm btn-success" id="addLineBtn">
+                            <i class="fas fa-plus me-1"></i>Ajouter une ligne
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        {{ formset.management_form }}
+                        
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="invoice-lines-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Produit/Service</th>
+                                        <th>Référence</th>
+                                        <th>Désignation</th>
+                                        <th>Unité</th>
+                                        <th>Quantité</th>
+                                        <th>Prix unit. HT</th>
+                                        <th>Total HT</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="invoice-lines-tbody">
+                                    {% for form in formset %}
+                                        <tr class="invoice-line-row">
+                                            <td>
+                                                {{ form.product }}
+                                                {{ form.id }}
+                                            </td>
+                                            <td>{{ form.reference }}</td>
+                                            <td>{{ form.description }}</td>
+                                            <td>{{ form.unit }}</td>
+                                            <td>{{ form.quantity }}</td>
+                                            <td>{{ form.unit_price }}</td>
+                                            <td class="line-total">0.00</td>
+                                            <td>
+                                                <button type="button" class="btn btn-sm btn-danger remove-line">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                                {{ form.DELETE }}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notes -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Notes</h6>
+                    </div>
+                    <div class="card-body">
+                        {{ form.notes }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Summary -->
+            <div class="col-lg-4">
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Récapitulatif</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.discount_amount.id_for_label }}" class="form-label">{{ form.discount_amount.label }}</label>
+                                {{ form.discount_amount }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.timbre_fiscal.id_for_label }}" class="form-label">{{ form.timbre_fiscal.label }}</label>
+                                {{ form.timbre_fiscal }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.other_taxes.id_for_label }}" class="form-label">{{ form.other_taxes.label }}</label>
+                            {{ form.other_taxes }}
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>TOTAL H.T.:</span>
+                            <span id="subtotal-display">0.00 DA</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>REMISE:</span>
+                            <span id="discount-display">0.00 DA</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>T.V.A. (19%):</span>
+                            <span id="tva-display">0.00 DA</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>TIMBRE:</span>
+                            <span id="timbre-display">0.00 DA</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>AUTRES TAXES:</span>
+                            <span id="other-taxes-display">0.00 DA</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between fw-bold">
+                            <span>TOTAL FACTURE:</span>
+                            <span id="total-display">0.00 DA</span>
+                        </div>
+                        
+                        <div class="mt-4 d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Enregistrer
+                            </button>
+                            <a href="{% url 'invoices:list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Annuler
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let lineIndex = {{ formset.total_form_count }};
+
+// Add new invoice line
+document.getElementById('addLineBtn').addEventListener('click', function() {
+    const tbody = document.getElementById('invoice-lines-tbody');
+    const totalForms = document.getElementById('id_invoiceline_set-TOTAL_FORMS');
+    
+    const newRow = tbody.insertRow();
+    newRow.className = 'invoice-line-row';
+    newRow.innerHTML = `
+        <td>
+            <select name="invoiceline_set-${lineIndex}-product" class="form-select product-select" id="id_invoiceline_set-${lineIndex}-product">
+                <option value="">---------</option>
+                {% for product in products %}
+                <option value="{{ product.pk }}">{{ product.code }} - {{ product.name }}</option>
+                {% endfor %}
+            </select>
+            <input type="hidden" name="invoiceline_set-${lineIndex}-id" id="id_invoiceline_set-${lineIndex}-id">
+        </td>
+        <td><input type="text" name="invoiceline_set-${lineIndex}-reference" class="form-control" id="id_invoiceline_set-${lineIndex}-reference"></td>
+        <td><input type="text" name="invoiceline_set-${lineIndex}-description" class="form-control" id="id_invoiceline_set-${lineIndex}-description"></td>
+        <td><input type="text" name="invoiceline_set-${lineIndex}-unit" class="form-control" id="id_invoiceline_set-${lineIndex}-unit"></td>
+        <td><input type="number" name="invoiceline_set-${lineIndex}-quantity" class="form-control quantity-input" step="0.01" id="id_invoiceline_set-${lineIndex}-quantity"></td>
+        <td><input type="number" name="invoiceline_set-${lineIndex}-unit_price" class="form-control price-input" step="0.01" id="id_invoiceline_set-${lineIndex}-unit_price"></td>
+        <td class="line-total">0.00</td>
+        <td>
+            <button type="button" class="btn btn-sm btn-danger remove-line">
+                <i class="fas fa-trash"></i>
+            </button>
+            <input type="checkbox" name="invoiceline_set-${lineIndex}-DELETE" style="display:none;" id="id_invoiceline_set-${lineIndex}-DELETE">
+        </td>
+    `;
+    
+    lineIndex++;
+    totalForms.value = lineIndex;
+    
+    // Add event listeners to new row
+    addLineEventListeners(newRow);
+    calculateTotals();
+});
+
+// Remove invoice line
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('remove-line') || e.target.closest('.remove-line')) {
+        const row = e.target.closest('tr');
+        const deleteCheckbox = row.querySelector('input[name$="-DELETE"]');
+        
+        if (deleteCheckbox) {
+            deleteCheckbox.checked = true;
+            row.style.display = 'none';
+        } else {
+            row.remove();
+        }
+        
+        calculateTotals();
+    }
+});
+
+// Product selection change
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('product-select')) {
+        const productId = e.target.value;
+        if (productId) {
+            fetch(`{% url 'invoices:product_data' %}?product_id=${productId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const row = e.target.closest('tr');
+                    row.querySelector('[name$="-description"]').value = data.description || '';
+                    row.querySelector('[name$="-unit"]').value = data.unit || '';
+                    row.querySelector('[name$="-unit_price"]').value = data.unit_price || '';
+                    row.querySelector('[name$="-reference"]').value = data.code || '';
+                    calculateLineTotal(row);
+                });
+        }
+    }
+});
+
+// Calculate line total
+function calculateLineTotal(row) {
+    const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+    const unitPrice = parseFloat(row.querySelector('.price-input').value) || 0;
+    const total = quantity * unitPrice;
+    
+    row.querySelector('.line-total').textContent = total.toFixed(2);
+    calculateTotals();
+}
+
+// Calculate invoice totals
+function calculateTotals() {
+    let subtotal = 0;
+    
+    document.querySelectorAll('.invoice-line-row:not([style*="display: none"])').forEach(row => {
+        const lineTotal = parseFloat(row.querySelector('.line-total').textContent) || 0;
+        subtotal += lineTotal;
+    });
+    
+    const discount = parseFloat(document.getElementById('id_discount_amount').value) || 0;
+    const timbre = parseFloat(document.getElementById('id_timbre_fiscal').value) || 0;
+    const otherTaxes = parseFloat(document.getElementById('id_other_taxes').value) || 0;
+    
+    const discountedSubtotal = subtotal - discount;
+    const tva = discountedSubtotal * 0.19; // 19% TVA
+    const total = discountedSubtotal + tva + timbre + otherTaxes;
+    
+    document.getElementById('subtotal-display').textContent = subtotal.toFixed(2) + ' DA';
+    document.getElementById('discount-display').textContent = discount.toFixed(2) + ' DA';
+    document.getElementById('tva-display').textContent = tva.toFixed(2) + ' DA';
+    document.getElementById('timbre-display').textContent = timbre.toFixed(2) + ' DA';
+    document.getElementById('other-taxes-display').textContent = otherTaxes.toFixed(2) + ' DA';
+    document.getElementById('total-display').textContent = total.toFixed(2) + ' DA';
+}
+
+// Add event listeners to existing rows
+function addLineEventListeners(row) {
+    const quantityInput = row.querySelector('.quantity-input');
+    const priceInput = row.querySelector('.price-input');
+    
+    if (quantityInput) {
+        quantityInput.addEventListener('input', () => calculateLineTotal(row));
+    }
+    if (priceInput) {
+        priceInput.addEventListener('input', () => calculateLineTotal(row));
+    }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.invoice-line-row').forEach(addLineEventListeners);
+    
+    // Add listeners to tax fields
+    ['id_discount_amount', 'id_timbre_fiscal', 'id_other_taxes'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('input', calculateTotals);
+        }
+    });
+    
+    calculateTotals();
+});
+</script>
+{% endblock %}

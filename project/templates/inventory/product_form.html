@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <a href="{% url 'inventory:product_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+        </a>
+    </div>
+    
+    <form method="post" class="needs-validation" novalidate>
+        {% csrf_token %}
+        
+        <div class="row">
+            <!-- Basic Information -->
+            <div class="col-lg-8">
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Informations générales</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.code.id_for_label }}" class="form-label">{{ form.code.label }} *</label>
+                                    {{ form.code }}
+                                    {% if form.code.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.code.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }} *</label>
+                                    {{ form.name }}
+                                    {% if form.name.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback d-block">{{ form.description.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.category.id_for_label }}" class="form-label">{{ form.category.label }} *</label>
+                                    {{ form.category }}
+                                    {% if form.category.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.category.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mt-4">
+                                    {{ form.is_service }}
+                                    <label class="form-check-label" for="{{ form.is_service.id_for_label }}">
+                                        {{ form.is_service.label }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Pricing -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Tarification</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.unit_price.id_for_label }}" class="form-label">{{ form.unit_price.label }} *</label>
+                                    <div class="input-group">
+                                        {{ form.unit_price }}
+                                        <span class="input-group-text">DA</span>
+                                    </div>
+                                    {% if form.unit_price.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.unit_price.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.unit.id_for_label }}" class="form-label">{{ form.unit.label }}</label>
+                                    {{ form.unit }}
+                                    {% if form.unit.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.unit.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Stock Management (for products only) -->
+                <div class="card shadow mb-4" id="stock-section">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Gestion du stock</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.stock_quantity.id_for_label }}" class="form-label">{{ form.stock_quantity.label }}</label>
+                                    {{ form.stock_quantity }}
+                                    {% if form.stock_quantity.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.stock_quantity.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.minimum_stock.id_for_label }}" class="form-label">{{ form.minimum_stock.label }}</label>
+                                    {{ form.minimum_stock }}
+                                    {% if form.minimum_stock.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.minimum_stock.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Waste-specific Information -->
+                <div class="card shadow mb-4" id="waste-section">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Informations spécifiques aux déchets</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="{{ form.hazard_level.id_for_label }}" class="form-label">{{ form.hazard_level.label }}</label>
+                            {{ form.hazard_level }}
+                            {% if form.hazard_level.errors %}
+                                <div class="invalid-feedback d-block">{{ form.hazard_level.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.storage_requirements.id_for_label }}" class="form-label">{{ form.storage_requirements.label }}</label>
+                            {{ form.storage_requirements }}
+                            {% if form.storage_requirements.errors %}
+                                <div class="invalid-feedback d-block">{{ form.storage_requirements.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.handling_instructions.id_for_label }}" class="form-label">{{ form.handling_instructions.label }}</label>
+                            {{ form.handling_instructions }}
+                            {% if form.handling_instructions.errors %}
+                                <div class="invalid-feedback d-block">{{ form.handling_instructions.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Status and Actions -->
+            <div class="col-lg-4">
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Statut</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check">
+                            {{ form.is_active }}
+                            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                {{ form.is_active.label }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="card shadow">
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Enregistrer
+                            </button>
+                            <a href="{% url 'inventory:product_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Annuler
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const isServiceCheckbox = document.getElementById('{{ form.is_service.id_for_label }}');
+    const stockSection = document.getElementById('stock-section');
+    const wasteSection = document.getElementById('waste-section');
+    
+    function toggleSections() {
+        if (isServiceCheckbox.checked) {
+            stockSection.style.display = 'none';
+            wasteSection.style.display = 'none';
+        } else {
+            stockSection.style.display = 'block';
+            wasteSection.style.display = 'block';
+        }
+    }
+    
+    isServiceCheckbox.addEventListener('change', toggleSections);
+    toggleSections(); // Initial state
+});
+</script>
+{% endblock %}

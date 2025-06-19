@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Tableau de bord - Gestion des Déchets Spéciaux{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Tableau de bord</h1>
+        <div class="text-muted">
+            <i class="fas fa-calendar-alt me-1"></i>
+            {{ "now"|date:"d F Y" }}
+        </div>
+    </div>
+    
+    <!-- Stats Cards Row -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Chiffre d'affaires (ce mois)
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ this_month_revenue|floatformat:2|intcomma }} DA
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Factures en attente
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pending_invoices }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-file-invoice fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Clients actifs
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_customers }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Créances en souffrance
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ total_outstanding|floatformat:2|intcomma }} DA
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="row">
+        <!-- Revenue Chart -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Évolution du chiffre d'affaires</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Invoice Status Distribution -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Répartition des factures</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="statusChart" width="400" height="400"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activities Row -->
+    <div class="row">
+        <!-- Recent Invoices -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Factures récentes</h6>
+                    <a href="{% url 'invoices:list' %}" class="btn btn-sm btn-primary">Voir tout</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_invoices %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Numéro</th>
+                                        <th>Client</th>
+                                        <th>Montant</th>
+                                        <th>Statut</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for invoice in recent_invoices %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'invoices:detail' invoice.pk %}">{{ invoice.invoice_number }}</a>
+                                        </td>
+                                        <td>{{ invoice.customer.name|truncatechars:20 }}</td>
+                                        <td>{{ invoice.total_ttc|floatformat:2 }} DA</td>
+                                        <td>
+                                            <span class="badge badge-{{ invoice.status }}">{{ invoice.get_status_display }}</span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Aucune facture récente</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top Customers -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Meilleurs clients</h6>
+                    <a href="{% url 'customers:list' %}" class="btn btn-sm btn-primary">Voir tout</a>
+                </div>
+                <div class="card-body">
+                    {% if top_customers %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Client</th>
+                                        <th>Chiffre d'affaires</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for customer in top_customers %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'customers:detail' customer.pk %}">{{ customer.name|truncatechars:25 }}</a>
+                                        </td>
+                                        <td>{{ customer.total_revenue|floatformat:2|default:"0.00" }} DA</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Aucun client trouvé</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Low Stock Alert -->
+    {% if low_stock_products %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-warning shadow">
+                <h6 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Alerte stock faible</h6>
+                <p class="mb-2">Les produits suivants ont un stock faible :</p>
+                <ul class="mb-0">
+                    {% for product in low_stock_products %}
+                    <li>
+                        <a href="{% url 'inventory:product_detail' product.pk %}">{{ product.name }}</a>
+                        - Stock actuel: {{ product.stock_quantity }} {{ product.unit }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Revenue Chart
+const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+const revenueChart = new Chart(revenueCtx, {
+    type: 'line',
+    data: {
+        labels: [{% for item in monthly_revenue %}'{{ item.month }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Chiffre d\'affaires (DA)',
+            data: [{% for item in monthly_revenue %}{{ item.revenue }}{% if not forloop.last %},{% endif %}{% endfor %}],
+            borderColor: 'rgb(54, 162, 235)',
+            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+            tension: 0.1,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value.toLocaleString() + ' DA';
+                    }
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+
+// Status Distribution Chart
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+const statusChart = new Chart(statusCtx, {
+    type: 'doughnut',
+    data: {
+        labels: [{% for item in status_distribution %}'{{ item.status }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+            data: [{% for item in status_distribution %}{{ item.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+            backgroundColor: [
+                '#4e73df',
+                '#1cc88a',
+                '#36b9cc',
+                '#f6c23e',
+                '#e74a3b'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}{{ customer.name }} - Détails du client{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ customer.name }}</h1>
+        <div>
+            <a href="{% url 'customers:update' customer.pk %}" class="btn btn-primary me-2">
+                <i class="fas fa-edit me-2"></i>Modifier
+            </a>
+            <a href="{% url 'customers:list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Customer Information -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Informations générales</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="fw-semibold">Nom/Raison sociale:</td>
+                                    <td>{{ customer.name }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Type de client:</td>
+                                    <td>
+                                        <span class="badge bg-{% if customer.customer_type == 'company' %}primary{% else %}secondary{% endif %}">
+                                            {{ customer.get_customer_type_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Activité:</td>
+                                    <td>{{ customer.activity|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Téléphone:</td>
+                                    <td>{{ customer.phone|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Fax:</td>
+                                    <td>{{ customer.fax|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Email:</td>
+                                    <td>{{ customer.email|default:"-" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="fw-semibold">Adresse:</td>
+                                    <td>{{ customer.full_address }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">NIS:</td>
+                                    <td>{{ customer.nis|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">RC:</td>
+                                    <td>{{ customer.rc|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">ART:</td>
+                                    <td>{{ customer.art|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">NIF:</td>
+                                    <td>{{ customer.nif|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Statut:</td>
+                                    <td>
+                                        <span class="status-indicator {% if customer.is_active %}active{% else %}inactive{% endif %}"></span>
+                                        {% if customer.is_active %}Actif{% else %}Inactif{% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Commercial Settings -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Paramètres commerciaux</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h5 class="text-primary">{{ customer.credit_limit|floatformat:2|intcomma }} DA</h5>
+                                <small class="text-muted">Limite de crédit</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h5 class="text-info">{{ customer.payment_terms }} jours</h5>
+                                <small class="text-muted">Délai de paiement</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h5 class="text-success">{{ customer.discount_rate|floatformat:2 }}%</h5>
+                                <small class="text-muted">Taux de remise</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Actions rapides</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'invoices:create' %}?customer={{ customer.pk }}" class="btn btn-success">
+                            <i class="fas fa-file-invoice me-2"></i>Créer une facture
+                        </a>
+                        <a href="{% url 'customers:update' customer.pk %}" class="btn btn-primary">
+                            <i class="fas fa-edit me-2"></i>Modifier les informations
+                        </a>
+                        <a href="#" class="btn btn-info">
+                            <i class="fas fa-chart-bar me-2"></i>Voir les statistiques
+                        </a>
+                        <a href="{% url 'customers:delete' customer.pk %}" class="btn btn-danger" 
+                           data-confirm-delete="Êtes-vous sûr de vouloir supprimer ce client ?">
+                            <i class="fas fa-trash me-2"></i>Supprimer le client
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Invoices -->
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Factures récentes</h6>
+                </div>
+                <div class="card-body">
+                    {% if customer.invoice_set.all %}
+                        {% for invoice in customer.invoice_set.all|slice:":5" %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <a href="{% url 'invoices:detail' invoice.pk %}" class="fw-semibold">
+                                    {{ invoice.invoice_number }}
+                                </a>
+                                <br>
+                                <small class="text-muted">{{ invoice.invoice_date|date:"d/m/Y" }}</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-semibold">{{ invoice.total_ttc|floatformat:2 }} DA</div>
+                                <span class="badge bg-{% if invoice.status == 'paid' %}success{% elif invoice.status == 'overdue' %}danger{% else %}warning{% endif %}">
+                                    {{ invoice.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                        {% if not forloop.last %}<hr>{% endif %}
+                        {% endfor %}
+                        
+                        {% if customer.invoice_set.count > 5 %}
+                        <div class="text-center mt-3">
+                            <a href="{% url 'invoices:list' %}?customer={{ customer.pk }}" class="btn btn-sm btn-outline-primary">
+                                Voir toutes les factures
+                            </a>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted text-center">Aucune facture</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

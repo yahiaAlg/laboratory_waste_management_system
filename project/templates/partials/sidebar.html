@@ -1,0 +1,98 @@
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h3><i class="fas fa-recycle text-success me-2"></i>Déchets Pro</h3>
+        <button class="btn btn-link d-md-none" id="sidebarToggle">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    
+    <ul class="sidebar-menu">
+        <li class="menu-item">
+            <a href="{% url 'dashboard:index' %}" class="menu-link">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Tableau de bord</span>
+            </a>
+        </li>
+        
+        <li class="menu-item">
+            <a href="#" class="menu-link" data-bs-toggle="collapse" data-bs-target="#invoicesMenu">
+                <i class="fas fa-file-invoice"></i>
+                <span>Facturation</span>
+                <i class="fas fa-chevron-down ms-auto"></i>
+            </a>
+            <div class="collapse" id="invoicesMenu">
+                <ul class="submenu">
+                    <li><a href="{% url 'invoices:list' %}">Liste des factures</a></li>
+                    <li><a href="{% url 'invoices:create' %}">Nouvelle facture</a></li>
+                </ul>
+            </div>
+        </li>
+        
+        <li class="menu-item">
+            <a href="#" class="menu-link" data-bs-toggle="collapse" data-bs-target="#customersMenu">
+                <i class="fas fa-users"></i>
+                <span>Clients</span>
+                <i class="fas fa-chevron-down ms-auto"></i>
+            </a>
+            <div class="collapse" id="customersMenu">
+                <ul class="submenu">
+                    <li><a href="{% url 'customers:list' %}">Liste des clients</a></li>
+                    <li><a href="{% url 'customers:create' %}">Nouveau client</a></li>
+                </ul>
+            </div>
+        </li>
+        
+        <li class="menu-item">
+            <a href="#" class="menu-link" data-bs-toggle="collapse" data-bs-target="#inventoryMenu">
+                <i class="fas fa-boxes"></i>
+                <span>Inventaire</span>
+                <i class="fas fa-chevron-down ms-auto"></i>
+            </a>
+            <div class="collapse" id="inventoryMenu">
+                <ul class="submenu">
+                    <li><a href="{% url 'inventory:product_list' %}">Produits/Services</a></li>
+                    <li><a href="{% url 'inventory:product_create' %}">Nouveau produit</a></li>
+                    <li><a href="{% url 'inventory:low_stock_report' %}">Stock faible</a></li>
+                </ul>
+            </div>
+        </li>
+        
+        <li class="menu-item">
+            <a href="#" class="menu-link" data-bs-toggle="collapse" data-bs-target="#suppliersMenu">
+                <i class="fas fa-truck"></i>
+                <span>Fournisseurs</span>
+                <i class="fas fa-chevron-down ms-auto"></i>
+            </a>
+            <div class="collapse" id="suppliersMenu">
+                <ul class="submenu">
+                    <li><a href="{% url 'suppliers:list' %}">Liste des fournisseurs</a></li>
+                    <li><a href="{% url 'suppliers:create' %}">Nouveau fournisseur</a></li>
+                </ul>
+            </div>
+        </li>
+        
+        <li class="menu-item">
+            <a href="#" class="menu-link" data-bs-toggle="collapse" data-bs-target="#reportsMenu">
+                <i class="fas fa-chart-bar"></i>
+                <span>Rapports</span>
+                <i class="fas fa-chevron-down ms-auto"></i>
+            </a>
+            <div class="collapse" id="reportsMenu">
+                <ul class="submenu">
+                    <li><a href="{% url 'reports:sales' %}">Rapport des ventes</a></li>
+                    <li><a href="{% url 'reports:customers' %}">Rapport clients</a></li>
+                    <li><a href="{% url 'reports:products' %}">Rapport produits</a></li>
+                    <li><a href="{% url 'reports:financial' %}">Rapport financier</a></li>
+                </ul>
+            </div>
+        </li>
+        
+        <li class="menu-item">
+            <a href="{% url 'company:settings' %}" class="menu-link">
+                <i class="fas fa-cog"></i>
+                <span>Paramètres</span>
+            </a>
+        </li>
+    </ul>
+</nav>

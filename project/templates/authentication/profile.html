@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}Mon profil{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Mon profil</h1>
+    </div>
+    
+    <div class="row">
+        <!-- Profile Information -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Informations personnelles</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="fw-semibold">Nom d'utilisateur:</td>
+                                    <td>{{ user.username }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Prénom:</td>
+                                    <td>{{ user.first_name|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Nom:</td>
+                                    <td>{{ user.last_name|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Email:</td>
+                                    <td>{{ user.email|default:"-" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="fw-semibold">Rôle:</td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ user.get_role_display }}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Téléphone:</td>
+                                    <td>{{ user.phone|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Membre depuis:</td>
+                                    <td>{{ user.date_joined|date:"d/m/Y" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Dernière connexion:</td>
+                                    <td>{{ user.last_login|date:"d/m/Y H:i"|default:"-" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Activity Summary -->
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Résumé d'activité</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="border-end">
+                                <h4 class="text-primary">{{ user.invoice_set.count }}</h4>
+                                <small class="text-muted">Factures créées</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border-end">
+                                <h4 class="text-success">{{ user.stockmovement_set.count }}</h4>
+                                <small class="text-muted">Mouvements de stock</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border-end">
+                                <h4 class="text-info">{{ user.payment_set.count }}</h4>
+                                <small class="text-muted">Paiements enregistrés</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-warning">{{ user.updated_at|timesince }}</h4>
+                            <small class="text-muted">Dernière modification</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Profile Picture and Actions -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Photo de profil</h6>
+                </div>
+                <div class="card-body text-center">
+                    {% if user.avatar %}
+                        <img src="{{ user.avatar.url }}" alt="Avatar" class="rounded-circle mb-3" width="120" height="120">
+                    {% else %}
+                        <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 120px; height: 120px; font-size: 3rem;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    {% endif %}
+                    <h5>{{ user.get_full_name|default:user.username }}</h5>
+                    <p class="text-muted">{{ user.get_role_display }}</p>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                            <i class="fas fa-edit me-2"></i>Modifier le profil
+                        </button>
+                        <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                            <i class="fas fa-key me-2"></i>Changer le mot de passe
+                        </button>
+                        <a href="{% url 'authentication:logout' %}" class="btn btn-outline-danger">
+                            <i class="fas fa-sign-out-alt me-2"></i>Se déconnecter
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Modifier le profil</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Cette fonctionnalité sera bientôt disponible.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Changer le mot de passe</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Cette fonctionnalité sera bientôt disponible.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

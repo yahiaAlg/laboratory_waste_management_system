@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Rapport produits{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Rapport produits</h1>
+        <a href="{% url 'reports:index' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Retour aux rapports
+        </a>
+    </div>
+    
+    <!-- Products Table -->
+    <div class="card shadow">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Inventaire des produits/services</h6>
+        </div>
+        <div class="card-body">
+            {% if products %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Code</th>
+                                <th>Nom</th>
+                                <th>Catégorie</th>
+                                <th>Type</th>
+                                <th>Prix unitaire</th>
+                                <th>Stock</th>
+                                <th>Niveau danger</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in products %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'inventory:product_detail' product.pk %}" class="fw-semibold">
+                                        {{ product.code }}
+                                    </a>
+                                </td>
+                                <td>{{ product.name|truncatechars:40 }}</td>
+                                <td>{{ product.category.name }}</td>
+                                <td>
+                                    <span class="badge bg-{% if product.is_service %}info{% else %}primary{% endif %}">
+                                        {% if product.is_service %}Service{% else %}Produit{% endif %}
+                                    </span>
+                                </td>
+                                <td>{{ product.unit_price|floatformat:2|intcomma }} DA</td>
+                                <td>
+                                    {% if product.is_service %}
+                                        <span class="badge bg-info">Service</span>
+                                    {% else %}
+                                        <span class="{% if product.is_low_stock %}text-danger fw-bold{% endif %}">
+                                            {{ product.stock_quantity }} {{ product.unit }}
+                                        </span>
+                                        {% if product.is_low_stock %}
+                                            <i class="fas fa-exclamation-triangle text-warning ms-1"></i>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if product.hazard_level == 'critical' %}danger{% elif product.hazard_level == 'high' %}warning{% elif product.hazard_level == 'medium' %}info{% else %}secondary{% endif %}">
+                                        {{ product.get_hazard_level_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="status-indicator {% if product.is_active %}active{% else %}inactive{% endif %}"></span>
+                                    {% if product.is_active %}Actif{% else %}Inactif{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted text-center">Aucun produit trouvé</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
