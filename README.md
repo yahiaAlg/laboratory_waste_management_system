@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Create a comprehensive laboratory waste management and invoice system using Django framework with the following technology stack:
+a comprehensive laboratory waste management and invoice system using Django framework with the following technology stack:
 
 - **Backend**: Django 4.x with Python 3.x
 - **Frontend**: HTML5, CSS3, JavaScript ES6+
@@ -15,7 +15,7 @@ Create a comprehensive laboratory waste management and invoice system using Djan
 
 ### 1. Company Profile Management
 
-Based on the invoice header "CHABANI HIND - COLLECTE DES DECHETS SPECIAUX DANGEREUX":
+Based on the invoice header "COLLECTE DES DECHETS SPECIAUX DANGEREUX":
 
 ```python
 # Company model structure
