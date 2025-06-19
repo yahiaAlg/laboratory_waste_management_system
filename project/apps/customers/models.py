@@ -1,5 +1,18 @@
 from django.db import models
 from django.core.validators import RegexValidator
+class City(models.Model):
+
+    
+    name = models.CharField(max_length=50)
+    code = models.CharField(max_length=10, validators=[RegexValidator(regex='^(\d{3}-\d{4})$')])
+
+    class Meta:
+        verbose_name = "cité"
+        verbose_name_plural = "cités"
+
+    def __str__(self):
+        return self.name
+
 
 class Customer(models.Model):
     CUSTOMER_TYPE_CHOICES = [
@@ -14,8 +27,9 @@ class Customer(models.Model):
     address_line1 = models.CharField(max_length=200, verbose_name="Adresse ligne 1")
     address_line2 = models.CharField(max_length=200, blank=True, verbose_name="Adresse ligne 2")
     city = models.CharField(max_length=100, verbose_name="Ville")
+    
     postal_code = models.CharField(max_length=10, verbose_name="Code postal")
-    state = models.CharField(max_length=100, default="Algérie", verbose_name="Wilaya/État")
+    state = models.ForeignKey(City, on_delete=models.CASCADE , verbose_name="Wilaya", related_name='customers')
     
     # Contact information
     phone = models.CharField(max_length=20, blank=True, verbose_name="Téléphone")

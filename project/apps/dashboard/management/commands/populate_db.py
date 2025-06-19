@@ -14,7 +14,7 @@ django.setup()
 # Import your models
 from apps.authentication.models import User
 from apps.company.models import Company
-from apps.customers.models import Customer
+from apps.customers.models import City, Customer
 from apps.inventory.models import Category, Product, StockMovement
 from apps.invoices.models import Invoice, InvoiceLine, Payment
 from apps.suppliers.models import Supplier
@@ -25,6 +25,11 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args, **options):
         self.stdout.write(self.style.SUCCESS('Starting database population...'))
+        
+        # First, make sure cities are populated
+        self.stdout.write('Ensuring cities are populated...')
+        from django.core.management import call_command
+        call_command('populate_cities')
         
         # Clear existing data (optional - comment out if you don't want to clear existing data)
         self.clear_data()
@@ -52,7 +57,7 @@ class Command(BaseCommand):
         self.create_invoices_and_payments(company, customers, products, users)
         
         self.stdout.write(self.style.SUCCESS('Database successfully populated!'))
-
+        
     def clear_data(self):
         self.stdout.write('Clearing existing data...')
         Payment.objects.all().delete()
@@ -137,6 +142,7 @@ class Command(BaseCommand):
 
     def create_company(self):
         self.stdout.write('Creating company profile...')
+        city_setif = City.objects.get(name='Sétif')
         
         company, created = Company.objects.get_or_create(
             name="EcoWaste Solutions SARL",
@@ -144,9 +150,9 @@ class Command(BaseCommand):
                 'business_description': "Collecte et traitement des déchets industriels",
                 'address_line1': "Zone Industrielle, Lot 45",
                 'address_line2': "Route Nationale 5",
-                'city': "Alger",
+                'city': "setif",
                 'postal_code': "16000",
-                'state': "Alger",
+                'state': city_setif,
                 'phone': "+213555987654",
                 'fax': "+213555987655",
                 'email': "contact@ecowaste.example.com",
@@ -382,14 +388,21 @@ class Command(BaseCommand):
     def create_customers(self):
         self.stdout.write('Creating customers...')
         
+        # First, get the City objects that we need
+        city_alger = City.objects.get(name='Alger')
+        city_bejaia = City.objects.get(name='Béjaïa')
+        city_constantine = City.objects.get(name='Constantine')
+        city_blida = City.objects.get(name='Blida')
+        city_oran = City.objects.get(name='Oran')
+        
         customers_data = [
             {
                 'name': 'Sonatrach',
                 'customer_type': 'company',
                 'address_line1': 'Avenue 1 Novembre',
-                'city': 'Alger',
+                'city': "alger",
                 'postal_code': '16000',
-                'state': 'Alger',
+                'state': city_alger,
                 'phone': '+213555111222',
                 'fax': '+213555111223',
                 'email': 'contact@sonatrach.example.com',
@@ -406,9 +419,9 @@ class Command(BaseCommand):
                 'name': 'SNVI',
                 'customer_type': 'company',
                 'address_line1': 'Zone Industrielle Rouiba',
-                'city': 'Alger',
+                'city': "alger",
                 'postal_code': '16012',
-                'state': 'Alger',
+                'state': city_alger,
                 'phone': '+213555333444',
                 'email': 'contact@snvi.example.com',
                 'activity': 'Industrie Automobile',
@@ -422,9 +435,9 @@ class Command(BaseCommand):
                 'name': 'Cevital',
                 'customer_type': 'company',
                 'address_line1': 'Route de Cap Djinet',
-                'city': 'Béjaïa',
+                'city': "bejaia",
                 'postal_code': '06000',
-                'state': 'Béjaïa',
+                'state': city_bejaia,
                 'phone': '+213555555666',
                 'email': 'contact@cevital.example.com',
                 'activity': 'Agroalimentaire',
@@ -439,9 +452,9 @@ class Command(BaseCommand):
                 'name': 'Ahmed Benali',
                 'customer_type': 'individual',
                 'address_line1': 'Cité El Amel, Bloc 5',
-                'city': 'Constantine',
+                'city': "constantine",
                 'postal_code': '25000',
-                'state': 'Constantine',
+                'state': city_constantine,
                 'phone': '+213555777888',
                 'email': 'ahmed.benali@example.com',
                 'payment_terms': 15,
@@ -461,18 +474,23 @@ class Command(BaseCommand):
                 self.stdout.write(f'  Customer already exists: {customer.name}')
         
         return created_customers
-
+    
     def create_suppliers(self):
         self.stdout.write('Creating suppliers...')
+        
+        # Get City objects
+        city_blida = City.objects.get(name='Blida')
+        city_alger = City.objects.get(name='Alger')
+        city_oran = City.objects.get(name='Oran')
         
         suppliers_data = [
             {
                 'name': 'TransportAlg SARL',
                 'contact_person': 'Mohamed Hadj',
                 'address_line1': 'Route de Blida, Zone d\'activité',
-                'city': 'Blida',
+                'city': "blida",
                 'postal_code': '09000',
-                'state': 'Blida',
+                'state': city_blida,
                 'phone': '+213555999000',
                 'email': 'contact@transportalg.example.com',
                 'services_provided': 'Transport de déchets industriels',
@@ -486,9 +504,9 @@ class Command(BaseCommand):
                 'name': 'SafetyEquip EURL',
                 'contact_person': 'Karim Bentahar',
                 'address_line1': '15 Rue des Frères Bouadou',
-                'city': 'Alger',
+                'city': "alger",
                 'postal_code': '16003',
-                'state': 'Alger',
+                'state': city_alger,
                 'phone': '+213555888999',
                 'email': 'contact@safetyequip.example.com',
                 'services_provided': 'Fourniture d\'équipements de sécurité',
@@ -502,9 +520,9 @@ class Command(BaseCommand):
                 'name': 'ChemContainer SPA',
                 'contact_person': 'Amina Larbi',
                 'address_line1': 'Zone Industrielle, Lot 32',
-                'city': 'Oran',
+                'city': "oran",
                 'postal_code': '31000',
-                'state': 'Oran',
+                'state': city_oran,
                 'phone': '+213555777666',
                 'email': 'contact@chemcontainer.example.com',
                 'services_provided': 'Fabrication de conteneurs spécialisés pour produits chimiques',

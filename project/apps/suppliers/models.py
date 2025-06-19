@@ -1,5 +1,7 @@
 from django.db import models
 
+from apps.customers.models import City
+
 class Supplier(models.Model):
     # Basic information
     name = models.CharField(max_length=200, verbose_name="Nom/Raison sociale")
@@ -10,7 +12,7 @@ class Supplier(models.Model):
     address_line2 = models.CharField(max_length=200, blank=True, verbose_name="Adresse ligne 2")
     city = models.CharField(max_length=100, verbose_name="Ville")
     postal_code = models.CharField(max_length=10, verbose_name="Code postal")
-    state = models.CharField(max_length=100, default="Algérie", verbose_name="Wilaya/État")
+    state = models.ForeignKey(City, on_delete=models.CASCADE , verbose_name="Wilaya", related_name='suppliers')
     
     # Contact information
     phone = models.CharField(max_length=20, blank=True, verbose_name="Téléphone")
