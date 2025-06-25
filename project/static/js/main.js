@@ -7,32 +7,57 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 
-    // Sidebar toggle functionality
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebarToggleTop = document.getElementById('sidebarToggleTop');
     const sidebar = document.getElementById('sidebar');
     const mainContent = document.getElementById('main-content');
 
     function toggleSidebar() {
-        if (window.innerWidth <= 768) {
-            sidebar.classList.toggle('show');
+        sidebar.classList.toggle('show');
+        
+        // For desktop: adjust main content margin
+        if (window.innerWidth > 768) {
+            if (sidebar.classList.contains('show')) {
+                mainContent.style.marginLeft = '0';
+            } else {
+                mainContent.style.marginLeft = 'var(--sidebar-width)';
+            }
         }
     }
 
+    // Add event listeners for both toggle buttons
     if (sidebarToggle) {
-        sidebarToggle.addEventListener('click', toggleSidebar);
+        sidebarToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            toggleSidebar();
+        });
     }
 
     if (sidebarToggleTop) {
-        sidebarToggleTop.addEventListener('click', toggleSidebar);
+        sidebarToggleTop.addEventListener('click', function(e) {
+            e.preventDefault();
+            toggleSidebar();
+        });
     }
 
     // Close sidebar when clicking outside on mobile
     document.addEventListener('click', function(event) {
-        if (window.innerWidth <= 768) {
-            if (!sidebar.contains(event.target) && !event.target.closest('#sidebarToggleTop')) {
+        if (window.innerWidth <= 768 && sidebar.classList.contains('show')) {
+            if (!sidebar.contains(event.target) && 
+                !event.target.closest('#sidebarToggleTop') && 
+                !event.target.closest('#sidebarToggle')) {
                 sidebar.classList.remove('show');
             }
+        }
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+            sidebar.classList.remove('show');
+            mainContent.style.marginLeft = 'var(--sidebar-width)';
+        } else {
+            mainContent.style.marginLeft = '0';
         }
     });
 

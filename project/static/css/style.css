@@ -359,9 +359,25 @@
 }
 
 /* Custom dropdown */
+/* Fix for dropdown menu positioning and visibility */
 .dropdown-menu {
     border: none;
     box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    z-index: 1050; /* Ensure dropdown appears above other elements */
+    min-width: 200px; /* Minimum width for better appearance */
+}
+
+/* Ensure navbar dropdown positioning */
+.navbar .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: auto;
+}
+
+/* Fix for user dropdown specific positioning */
+#userDropdown + .dropdown-menu {
+    margin-top: 0.5rem;
 }
 
 /* Page transitions */
@@ -377,5 +393,44 @@
     to {
         transform: translateY(0);
         opacity: 1;
+    }
+}
+
+/* Enhanced responsive sidebar styles */
+@media (max-width: 768px) {
+    .sidebar {
+        margin-left: -var(--sidebar-width);
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.show {
+        margin-left: 0;
+        transform: translateX(0);
+    }
+    
+    .main-content {
+        margin-left: 0 !important;
+    }
+    
+    .navbar {
+        left: 0;
+    }
+}
+
+/* Overlay for mobile sidebar */
+.sidebar.show::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: var(--sidebar-width);
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+}
+
+@media (max-width: 768px) {
+    .sidebar.show::before {
+        display: block;
     }
 }
