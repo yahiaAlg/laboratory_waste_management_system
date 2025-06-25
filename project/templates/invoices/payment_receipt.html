@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reçu de paiement - {{ payment.invoice.invoice_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        .no-print { display: none !important; }
+        .receipt-container { box-shadow: none !important; margin: 0 !important; }
+        body { background: white !important; margin: 0; padding: 10px; font-size: 12px; }
+        .receipt-header { padding: 15px !important; }
+        .receipt-body { padding: 15px !important; }
+        .amount-highlight { font-size: 1.5rem !important; padding: 10px !important; margin: 10px 0 !important; }
+        .payment-details { padding: 10px !important; margin: 10px 0 !important; }
+        .signature-area { margin-top: 20px !important; }
+        .signature-line { margin-top: 30px !important; }
+        .company-info { margin-bottom: 15px !important; padding-bottom: 10px !important; }
+        table { font-size: 11px !important; }
+        h1 { font-size: 1.5rem !important; }
+        h3 { font-size: 1.2rem !important; }
+        h5 { font-size: 1rem !important; }
+        .receipt-footer { padding: 10px !important; font-size: 10px !important; }
+    }
+    
+    .receipt-container {
+        max-width: 800px;
+        margin: 20px auto;
+        background: white;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .receipt-header {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        padding: 20px;
+        text-align: center;
+    }
+    
+    .receipt-body {
+        padding: 20px;
+    }
+    
+    .company-info {
+        text-align: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .payment-details {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 6px;
+        margin: 15px 0;
+    }
+    
+    .payment-method-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 0.75em;
+    }
+    
+    .method-cash { background: #d4edda; color: #155724; }
+    .method-check { background: #d1ecf1; color: #0c5460; }
+    .method-transfer { background: #f8d7da; color: #721c24; }
+    .method-card { background: #e2e3e5; color: #383d41; }
+    
+    .amount-highlight {
+        font-weight: bold;
+        color: #28a745;
+        text-align: center;
+        margin: 15px 0;
+        padding: 15px;
+        background: linear-gradient(135deg, #d4edda, #c3e6cb);
+        border-radius: 8px;
+        border: 2px solid #28a745;
+    }
+    
+    .receipt-footer {
+        background: #f8f9fa;
+        padding: 15px;
+        text-align: center;
+        border-top: 1px solid #dee2e6;
+        font-size: 0.85em;
+        color: #6c757d;
+    }
+    
+    .signature-area {
+        margin-top: 25px;
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .signature-box {
+        width: 180px;
+        text-align: center;
+    }
+    
+    .signature-line {
+        border-top: 1px solid #000;
+        margin-top: 40px;
+        padding-top: 5px;
+        font-size: 0.9em;
+    }
+    
+    .compact-table {
+        font-size: 0.9em;
+    }
+    
+    .compact-table td {
+        padding: 0.25rem 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Action Buttons -->
+    <div class="row no-print mb-3">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <a href="{% url 'invoices:detail' payment.invoice.pk %}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-arrow-left"></i> Retour
+                </a>
+                <div>
+                    <button onclick="window.print()" class="btn btn-primary btn-sm">
+                        <i class="fas fa-print"></i> Imprimer
+                    </button>
+                    <a href="{% url 'invoices:payment_history' payment.invoice.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-history"></i> Historique
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt -->
+    <div class="receipt-container">
+        <!-- Header -->
+        <div class="receipt-header">
+            <h1><i class="fas fa-receipt"></i> REÇU DE PAIEMENT</h1>
+            <p class="mb-0">N° {{ payment.pk|stringformat:"05d" }}</p>
+        </div>
+
+        <!-- Body -->
+        <div class="receipt-body">
+            <!-- Company Info -->
+            {% if company %}
+            <div class="company-info">
+                <h3 class="mb-1">{{ company.name }}</h3>
+                {% if company.address %}<p class="mb-1">{{ company.address }}</p>{% endif %}
+                <p class="mb-1">
+                    {% if company.phone %}{{ company.phone }}{% endif %}
+                    {% if company.email %} | {{ company.email }}{% endif %}
+                </p>
+                {% if company.tax_number %}<p class="mb-0"><strong>N° Fiscal:</strong> {{ company.tax_number }}</p>{% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Payment Information -->
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-file-invoice text-primary"></i> Facture</h5>
+                    <table class="table table-borderless compact-table">
+                        <tr><td><strong>N°:</strong></td><td>{{ payment.invoice.invoice_number }}</td></tr>
+                        <tr><td><strong>Date:</strong></td><td>{{ payment.invoice.invoice_date|date:"d/m/Y" }}</td></tr>
+                        <tr><td><strong>Client:</strong></td><td>{{ payment.invoice.customer.name }}</td></tr>
+                        <tr><td><strong>Total:</strong></td><td><strong>{{ payment.invoice.total_ttc|floatformat:2 }} DA</strong></td></tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5><i class="fas fa-money-bill text-success"></i> Paiement</h5>
+                    <table class="table table-borderless compact-table">
+                        <tr><td><strong>Date:</strong></td><td>{{ payment.payment_date|date:"d/m/Y" }}</td></tr>
+                        <tr><td><strong>Heure:</strong></td><td>{{ payment.created_at|date:"H:i" }}</td></tr>
+                        <tr>
+                            <td><strong>Mode:</strong></td>
+                            <td>
+                                <span class="payment-method-badge method-{{ payment.payment_method }}">
+                                    {% if payment.payment_method == 'cash' %}Espèces
+                                    {% elif payment.payment_method == 'check' %}Chèque
+                                    {% elif payment.payment_method == 'transfer' %}Virement
+                                    {% elif payment.payment_method == 'card' %}Carte
+                                    {% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        {% if payment.reference %}
+                        <tr><td><strong>Référence:</strong></td><td>{{ payment.reference }}</td></tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+
+            <!-- Amount Highlight -->
+            <div class="amount-highlight">
+                {{ payment.amount|floatformat:2 }} DA
+                <div style="font-size: 0.6em; margin-top: 5px;">MONTANT REÇU</div>
+            </div>
+
+            <!-- Payment Details Box -->
+            <div class="payment-details">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <h6 class="text-muted mb-1">SOLDE AVANT</h6>
+                        <div class="h5">{{ payment.invoice.total_ttc|floatformat:2 }} DA</div>
+                    </div>
+                    <div class="col-4">
+                        <h6 class="text-muted mb-1">PAIEMENT</h6>
+                        <div class="h5 text-success">-{{ payment.amount|floatformat:2 }} DA</div>
+                    </div>
+                    <div class="col-4">
+                        <h6 class="text-muted mb-1">RESTANT</h6>
+                        <div class="h5 {% if remaining_balance <= 0 %}text-success{% else %}text-warning{% endif %}">
+                            {% load custom_filters %}
+                            {% get_remaining_balance payment.invoice as remaining_balance %}
+                            {{ remaining_balance|floatformat:2 }} DA
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if payment.notes %}
+            <div class="mt-3">
+                <h6><i class="fas fa-sticky-note text-warning"></i> Notes</h6>
+                <div class="alert alert-light py-2">{{ payment.notes }}</div>
+            </div>
+            {% endif %}
+
+            <!-- Signature Area -->
+            <div class="signature-area">
+                <div class="signature-box">
+                    <div class="signature-line"><strong>Signature Client</strong></div>
+                </div>
+                <div class="signature-box">
+                    <div class="signature-line"><strong>Cachet & Signature</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="receipt-footer">
+            <p class="mb-1">Reçu généré le {{ payment.created_at|date:"d/m/Y à H:i" }}</p>
+            <p class="mb-0"><small>Reçu de paiement - Facture {{ payment.invoice.invoice_number }}</small></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

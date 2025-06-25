@@ -1,0 +1,11 @@
+<!-- templates/invoices/tags/payment_status_badge.html -->
+<span class="badge bg-{{ class_name }} fs-6">
+    {% if status == 'paid' %}
+        <i class="fas fa-check-circle"></i>
+    {% elif status == 'partial' %}
+        <i class="fas fa-clock"></i>
+    {% else %}
+        <i class="fas fa-exclamation-circle"></i>
+    {% endif %}
+    {{ text }}
+</span>

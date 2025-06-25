@@ -1,0 +1,340 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Historique des Paiements</h1>
+            <p class="text-muted mb-0">Facture {{ invoice.invoice_number }} - {{ invoice.customer.name }}</p>
+        </div>
+        <div>
+            <a href="{% url 'invoices:detail' invoice.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Retour à la facture
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Payment Summary Cards -->
+        <div class="col-12 mb-4">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="text-xs font-weight-bold text-uppercase mb-1">Total Facture</div>
+                                    <div class="h5 mb-0">{{ invoice.total_ttc|floatformat:2|intcomma }} DA</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-file-invoice fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="text-xs font-weight-bold text-uppercase mb-1">Total Payé</div>
+                                    <div class="h5 mb-0">{{ total_paid|floatformat:2|intcomma }} DA</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-check-circle fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-{% if balance_due > 0 %}danger{% else %}success{% endif %} text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="text-xs font-weight-bold text-uppercase mb-1">Solde Restant</div>
+                                    <div class="h5 mb-0">{{ balance_due|floatformat:2|intcomma }} DA</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-{% if balance_due > 0 %}exclamation-triangle{% else %}check-circle{% endif %} fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="text-xs font-weight-bold text-uppercase mb-1">Nb. Paiements</div>
+                                    <div class="h5 mb-0">{{ page_obj.paginator.count }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-money-bill-wave fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Progress -->
+        {% if invoice.total_ttc > 0 %}
+        <div class="col-12 mb-4">
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Progression des paiements</span>
+                        <span class="text-muted">
+                            {% widthratio total_paid invoice.total_ttc 100 %}%
+                        </span>
+                    </div>
+                    <div class="progress" style="height: 15px;">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {% widthratio total_paid invoice.total_ttc 100 %}%"
+                             aria-valuenow="{% widthratio total_paid invoice.total_ttc 100 %}" 
+                             aria-valuemin="0" aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Payments List -->
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        Détail des Paiements
+                        {% if page_obj.paginator.count > 0 %}
+                        <span class="badge bg-primary">{{ page_obj.paginator.count }}</span>
+                        {% endif %}
+                    </h6>
+                    {% if balance_due > 0 %}
+                    <a href="{% url 'invoices:add_payment' invoice.pk %}" class="btn btn-sm btn-success">
+                        <i class="fas fa-plus me-1"></i>Nouveau paiement
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if page_obj %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Montant</th>
+                                        <th>Mode de paiement</th>
+                                        <th>Référence</th>
+                                        <th>Notes</th>
+                                        <th>Créé par</th>
+                                        <th>Créé le</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for payment in page_obj %}
+                                    <tr>
+                                        <td>
+                                            <span class="fw-semibold">{{ payment.payment_date|date:"d/m/Y" }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success fs-6">
+                                                {{ payment.amount|floatformat:2|intcomma }} DA
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if payment.payment_method == 'cash' %}
+                                                <i class="fas fa-money-bill-wave text-success me-1"></i>Espèces
+                                            {% elif payment.payment_method == 'check' %}
+                                                <i class="fas fa-file-invoice text-primary me-1"></i>Chèque
+                                            {% elif payment.payment_method == 'transfer' %}
+                                                <i class="fas fa-university text-info me-1"></i>Virement
+                                            {% elif payment.payment_method == 'card' %}
+                                                <i class="fas fa-credit-card text-warning me-1"></i>Carte bancaire
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if payment.reference %}
+                                                <code>{{ payment.reference }}</code>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if payment.notes %}
+                                                <span class="text-truncate d-inline-block" style="max-width: 150px;" title="{{ payment.notes }}">
+                                                    {{ payment.notes }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar avatar-sm me-2">
+                                                    <span class="avatar-initial rounded-circle bg-primary">
+                                                        {{ payment.created_by.get_full_name|default:payment.created_by.username|first|upper }}
+                                                    </span>
+                                                </div>
+                                                <span class="small">{{ payment.created_by.get_full_name|default:payment.created_by.username }}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ payment.created_at|date:"d/m/Y H:i" }}</small>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                                type="button" 
+                                                data-bs-toggle="dropdown" 
+                                                data-bs-boundary="viewport"
+                                                aria-expanded="false">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li>
+                                                        <a class="dropdown-item" href="{% url 'invoices:payment_receipt' payment.pk %}" target="_blank">
+                                                            <i class="fas fa-receipt me-2"></i>Imprimer le reçu
+                                                        </a>
+                                                    </li>
+                                                    {% if user == payment.created_by or user.is_superuser %}
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <a class="dropdown-item text-danger" href="{% url 'invoices:payment_delete' payment.pk %}"
+                                                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce paiement de {{ payment.amount }} DA ?')">
+                                                            <i class="fas fa-trash me-2"></i>Supprimer
+                                                        </a>
+                                                    </li>
+                                                    {% endif %}
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        {% if page_obj.has_other_pages %}
+                        <nav aria-label="Payment pagination" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1">
+                                            <i class="fas fa-angle-double-left"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                                            <i class="fas fa-angle-left"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                                            <i class="fas fa-angle-right"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">
+                                            <i class="fas fa-angle-double-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-money-bill-wave fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Aucun paiement enregistré</h5>
+                            <p class="text-muted">Cette facture n'a encore reçu aucun paiement.</p>
+                            {% if balance_due > 0 %}
+                            <a href="{% url 'invoices:add_payment' invoice.pk %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Enregistrer le premier paiement
+                            </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar {
+    width: 2rem;
+    height: 2rem;
+}
+
+.avatar-initial {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: white;
+}
+
+.progress {
+    border-radius: 10px;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+.table-responsive {
+    overflow: visible !important;
+}
+
+.dropdown {
+    position: relative;
+}
+
+.dropdown-menu {
+    position: absolute !important;
+    z-index: 1050;
+    /* Remove any transform or fixed positioning */
+    transform: none !important;
+}
+</style>
+{% endblock %}

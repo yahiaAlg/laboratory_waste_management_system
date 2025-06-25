@@ -189,6 +189,9 @@ project/
 │   │   ├── admin.py
 │   │   ├── apps.py
 │   │   ├── forms.py
+│   │   ├── management/
+│   │   │   └── commands/
+│   │   │       └── populate_cities.py
 │   │   ├── migrations/
 │   │   │   └── 0001_initial.py
 │   │   ├── models.py
@@ -218,6 +221,8 @@ project/
 │   │   ├── migrations/
 │   │   │   └── 0001_initial.py
 │   │   ├── models.py
+│   │   ├── templatetags/
+│   │   │   └── custom_filters.py
 │   │   ├── urls.py
 │   │   └── views.py
 │   ├── reports/
@@ -272,7 +277,12 @@ project/
     │   ├── invoice_form.html
     │   ├── invoice_list.html
     │   ├── invoice_print.html
-    │   └── payment_form.html
+    │   ├── payment_confirm_delete.html
+    │   ├── payment_form.html
+    │   ├── payment_history.html
+    │   ├── payment_receipt.html
+    │   └── tags/
+    │       └── payment_status_badge.html
     ├── partials/
     │   ├── navbar.html
     │   └── sidebar.html

@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Supprimer le paiement - {{ invoice.invoice_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delete-warning {
+        background: linear-gradient(135deg, #f8d7da, #f1aeb5);
+        border: 2px solid #dc3545;
+        border-radius: 10px;
+        padding: 30px;
+        margin: 20px 0;
+    }
+    
+    .warning-icon {
+        font-size: 4rem;
+        color: #dc3545;
+        margin-bottom: 20px;
+    }
+    
+    .payment-info-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        border-left: 4px solid #007bff;
+    }
+    
+    .impact-summary {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .amount-highlight {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #dc3545;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 15px;
+        font-size: 0.85em;
+        font-weight: bold;
+    }
+    
+    .status-paid { background: #d4edda; color: #155724; }
+    .status-sent { background: #d1ecf1; color: #0c5460; }
+    .status-draft { background: #e2e3e5; color: #383d41; }
+    .status-overdue { background: #f8d7da; color: #721c24; }
+    
+    .btn-danger-confirm {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        border: none;
+        box-shadow: 0 4px 8px rgba(220,53,69,0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-danger-confirm:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(220,53,69,0.4);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-trash-alt text-danger"></i> Supprimer le paiement</h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item">
+                                <a href="{% url 'invoices:list' %}">Factures</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="{% url 'invoices:detail' invoice.pk %}">{{ invoice.invoice_number }}</a>
+                            </li>
+                            <li class="breadcrumb-item active">Supprimer paiement</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Warning Section -->
+            <div class="delete-warning text-center">
+                <div class="warning-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3 class="text-danger mb-3">Attention!</h3>
+                <p class="lead mb-0">
+                    Vous êtes sur le point de supprimer définitivement ce paiement.
+                    <br><strong>Cette action est irréversible.</strong>
+                </p>
+            </div>
+
+            <!-- Payment Information -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i> Informations du paiement
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-file-invoice text-primary"></i> Facture</h6>
+                            <p><strong>{{ invoice.invoice_number }}</strong></p>
+                            <p class="mb-1">{{ invoice.customer.name }}</p>
+                            <p class="small text-muted">{{ invoice.invoice_date|date:"d/m/Y" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-money-bill text-success"></i> Paiement</h6>
+                            <div class="amount-highlight">{{ payment.amount|floatformat:2 }} DA</div>
+                            <p class="mb-1">
+                                <span class="badge bg-secondary">
+                                    {% if payment.payment_method == 'cash' %}💵 Espèces
+                                    {% elif payment.payment_method == 'check' %}📄 Chèque
+                                    {% elif payment.payment_method == 'transfer' %}🏦 Virement
+                                    {% elif payment.payment_method == 'card' %}💳 Carte
+                                    {% endif %}
+                                </span>
+                            </p>
+                            <p class="small text-muted">{{ payment.payment_date|date:"d/m/Y" }}</p>
+                            {% if payment.reference %}
+                            <p class="small">
+                                <strong>Réf:</strong> {{ payment.reference }}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if payment.notes %}
+                    <div class="mt-3">
+                        <h6><i class="fas fa-sticky-note text-warning"></i> Notes</h6>
+                        <div class="alert alert-light">{{ payment.notes }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Impact Summary -->
+            <div class="impact-summary">
+                <h6 class="text-warning">
+                    <i class="fas fa-exclamation-circle"></i> Impact de la suppression
+                </h6>
+                
+                {% load custom_filters %}
+                {% get_payment_impact payment as impact %}
+                
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="small text-muted">STATUT ACTUEL</div>
+                        <span class="status-badge status-{{ invoice.status }}">
+                            {{ invoice.get_status_display }}
+                        </span>
+                    </div>
+                    <div class="col-4">
+                        <div class="small text-muted">NOUVEAU SOLDE</div>
+                        <div class="h5 text-danger">
+                            +{{ payment.amount|floatformat:2 }} DA
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="small text-muted">NOUVEAU STATUT</div>
+                        {% if impact.new_total_paid > 0 %}
+                        <span class="status-badge status-sent">Envoyée</span>
+                        {% else %}
+                        <span class="status-badge status-draft">Brouillon</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">Total payé actuellement:</small>
+                            <div><strong>{{ impact.current_total_paid|floatformat:2 }} DA</strong></div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Total payé après suppression:</small>
+                            <div><strong>{{ impact.new_total_paid|floatformat:2 }} DA</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Created By Info -->
+            <div class="payment-info-card">
+                <div class="row align-items-center">
+                    <div class="col-sm-6">
+                        <i class="fas fa-user text-muted"></i>
+                        <strong>Créé par:</strong> {{ payment.created_by.get_full_name|default:payment.created_by.username }}
+                    </div>
+                    <div class="col-sm-6">
+                        <i class="fas fa-clock text-muted"></i>
+                        <strong>Le:</strong> {{ payment.created_at|date:"d/m/Y à H:i" }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{% url 'invoices:detail' invoice.pk %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-arrow-left"></i> Annuler
+                    </a>
+                    
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'invoices:payment_history' invoice.pk %}" class="btn btn-outline-primary">
+                            <i class="fas fa-history"></i> Voir l'historique
+                        </a>
+                        
+                        <button type="submit" class="btn btn-danger btn-lg btn-danger-confirm" 
+                                onclick="return confirm('Êtes-vous absolument sûr de vouloir supprimer ce paiement ? Cette action ne peut pas être annulée.')">
+                            <i class="fas fa-trash-alt"></i> Supprimer définitivement
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Additional Warning -->
+            <div class="alert alert-warning mt-4" role="alert">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-shield-alt me-3" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <strong>Note de sécurité:</strong>
+                        <p class="mb-0">
+                            Cette action sera enregistrée dans les logs du système. 
+                            Seuls les utilisateurs autorisés peuvent supprimer des paiements.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add keyboard shortcut for cancel (Escape)
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            window.location.href = "{% url 'invoices:detail' invoice.pk %}";
+        }
+    });
+    
+    // Focus trap for accessibility
+    const form = document.querySelector('form');
+    const firstFocusable = form.querySelector('a, button');
+    const lastFocusable = form.querySelector('button[type="submit"]');
+    
+    form.addEventListener('keydown', function(e) {
+        if (e.key === 'Tab') {
+            if (e.shiftKey) {
+                if (document.activeElement === firstFocusable) {
+                    e.preventDefault();
+                    lastFocusable.focus();
+                }
+            } else {
+                if (document.activeElement === lastFocusable) {
+                    e.preventDefault();
+                    firstFocusable.focus();
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
