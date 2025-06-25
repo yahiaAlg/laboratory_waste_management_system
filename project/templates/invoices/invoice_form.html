@@ -93,21 +93,21 @@
                             <i class="fas fa-plus me-1"></i>Ajouter une ligne
                         </button>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body p-0">
                         {{ formset.management_form }}
                         
-                        <div class="table-responsive">
-                            <table class="table table-bordered" id="invoice-lines-table">
-                                <thead class="table-light">
+                        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                            <table class="table table-bordered mb-0" id="invoice-lines-table">
+                                <thead class="table-light sticky-top">
                                     <tr>
-                                        <th>Produit/Service</th>
-                                        <th>Référence</th>
-                                        <th>Désignation</th>
-                                        <th>Unité</th>
-                                        <th>Quantité</th>
-                                        <th>Prix unit. HT</th>
-                                        <th>Total HT</th>
-                                        <th>Actions</th>
+                                        <th style="min-width: 200px;">Produit/Service</th>
+                                        <th style="min-width: 120px;">Référence</th>
+                                        <th style="min-width: 200px;">Désignation</th>
+                                        <th style="min-width: 80px;">Unité</th>
+                                        <th style="min-width: 100px;">Quantité</th>
+                                        <th style="min-width: 120px;">Prix unit. HT</th>
+                                        <th style="min-width: 120px;">Total HT</th>
+                                        <th style="min-width: 80px;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="invoice-lines-tbody">
@@ -150,7 +150,7 @@
             
             <!-- Summary -->
             <div class="col-lg-4">
-                <div class="card shadow mb-4">
+                <div class="card shadow mb-4 position-sticky" style="top: 20px;">
                     <div class="card-header">
                         <h6 class="m-0 font-weight-bold text-primary">Récapitulatif</h6>
                     </div>
@@ -182,7 +182,7 @@
                             <span id="discount-display">0.00 DA</span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
-                            <span>T.V.A. (19%):</span>
+                            <span id="tva-label">T.V.A. (19%):</span>
                             <span id="tva-display">0.00 DA</span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
@@ -213,10 +213,75 @@
         </div>
     </form>
 </div>
+
+<style>
+.table-responsive {
+    border-radius: 0.375rem;
+}
+
+.sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.invoice-line-row td {
+    vertical-align: middle;
+}
+
+.invoice-line-row select,
+.invoice-line-row input {
+    min-width: 100%;
+}
+
+@media (max-width: 768px) {
+    .container-fluid {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .position-sticky {
+        position: relative !important;
+    }
+}
+</style>
+<input
+type="hidden"
+name="tva_rate"
+value="{{ company.tva_rate|default:19 }}"
+>
 {% endblock %}
+{% comment %} hidden input for tva rate {% endcomment %}
 
 {% block extra_js %}
 <script>
+
+// Get company data from Django context
+// get the tva rate  from the company object 
+// Get company data from Django context - FIXED VERSION
+const tvaRateInput = document.querySelector('input[name="tva_rate"]');
+const tvaRateValue = tvaRateInput ? parseFloat(tvaRateInput.value) : 19;
+
+// Validate and ensure we have a valid number
+const validTvaRate = isNaN(tvaRateValue) ? 19 : tvaRateValue;
+
+const COMPANY_DATA = {
+    tva_rate: validTvaRate,
+};
+
+const TVA_RATE = COMPANY_DATA.tva_rate / 100;
+
+// Add debugging to see what values we're getting
+console.log('TVA Rate from input:', tvaRateInput?.value);
+console.log('Parsed TVA Rate:', validTvaRate);
+console.log('Final TVA Rate (decimal):', TVA_RATE);
+
+
+
 let lineIndex = {{ formset.total_form_count }};
 
 // Add new invoice line
@@ -275,36 +340,114 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Product selection change
+// Product selection change - FIXED VERSION
 document.addEventListener('change', function(e) {
     if (e.target.classList.contains('product-select')) {
         const productId = e.target.value;
+        const row = e.target.closest('tr');
+        
         if (productId) {
-            fetch(`{% url 'invoices:product_data' %}?product_id=${productId}`)
-                .then(response => response.json())
-                .then(data => {
-                    const row = e.target.closest('tr');
-                    row.querySelector('[name$="-description"]').value = data.description || '';
-                    row.querySelector('[name$="-unit"]').value = data.unit || '';
-                    row.querySelector('[name$="-unit_price"]').value = data.unit_price || '';
-                    row.querySelector('[name$="-reference"]').value = data.code || '';
-                    calculateLineTotal(row);
-                });
+            // Show loading state
+            const descriptionField = row.querySelector('[name*="-description"]');
+            const unitField = row.querySelector('[name*="-unit"]');
+            const priceField = row.querySelector('[name*="-unit_price"]');
+            const referenceField = row.querySelector('[name*="-reference"]');
+            
+            // Clear fields first
+            descriptionField.value = '';
+            unitField.value = '';
+            priceField.value = '';
+            referenceField.value = '';
+            
+            // Add loading indicator
+            descriptionField.placeholder = 'Chargement...';
+            
+            // Make AJAX request
+            fetch('/invoices/api/product-data/?product_id=' + productId, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Remove loading indicator
+                descriptionField.placeholder = '';
+                
+                // Populate fields with product data
+                if (data.description) {
+                    descriptionField.value = data.description;
+                }
+                if (data.unit) {
+                    unitField.value = data.unit;
+                }
+                if (data.unit_price) {
+                    priceField.value = parseFloat(data.unit_price).toFixed(2);
+                }
+                if (data.code) {
+                    referenceField.value = data.code;
+                }
+                
+                // Calculate line total after populating price
+                calculateLineTotal(row);
+            })
+            .catch(error => {
+                console.error('Error fetching product data:', error);
+                descriptionField.placeholder = 'Erreur lors du chargement';
+                
+                // Show user-friendly error message
+                alert('Erreur lors du chargement des données du produit. Veuillez réessayer.');
+            });
+        } else {
+            // Clear all fields if no product selected
+            row.querySelector('[name*="-description"]').value = '';
+            row.querySelector('[name*="-unit"]').value = '';
+            row.querySelector('[name*="-unit_price"]').value = '';
+            row.querySelector('[name*="-reference"]').value = '';
+            calculateLineTotal(row);
         }
     }
 });
 
 // Calculate line total
 function calculateLineTotal(row) {
-    const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
-    const unitPrice = parseFloat(row.querySelector('.price-input').value) || 0;
-    const total = quantity * unitPrice;
+    const quantityInput = row.querySelector('.quantity-input') || row.querySelector('[name*="-quantity"]');
+    const priceInput = row.querySelector('.price-input') || row.querySelector('[name*="-unit_price"]');
+    const totalCell = row.querySelector('.line-total');
     
-    row.querySelector('.line-total').textContent = total.toFixed(2);
-    calculateTotals();
+    if (quantityInput && priceInput && totalCell) {
+        const quantity = parseFloat(quantityInput.value) || 0;
+        const unitPrice = parseFloat(priceInput.value) || 0;
+        const total = quantity * unitPrice;
+        
+        totalCell.textContent = total.toFixed(2);
+        calculateTotals();
+    }
+}
+
+// Add event listeners to existing rows
+function addLineEventListeners(row) {
+    const quantityInput = row.querySelector('.quantity-input') || row.querySelector('[name*="-quantity"]');
+    const priceInput = row.querySelector('.price-input') || row.querySelector('[name*="-unit_price"]');
+    
+    if (quantityInput) {
+        quantityInput.addEventListener('input', () => calculateLineTotal(row));
+        quantityInput.addEventListener('change', () => calculateLineTotal(row));
+    }
+    if (priceInput) {
+        priceInput.addEventListener('input', () => calculateLineTotal(row));
+        priceInput.addEventListener('change', () => calculateLineTotal(row));
+    }
 }
 
 // Calculate invoice totals
+// Calculate invoice totals - IMPROVED VERSION
 function calculateTotals() {
     let subtotal = 0;
     
@@ -313,47 +456,72 @@ function calculateTotals() {
         subtotal += lineTotal;
     });
     
-    const discount = parseFloat(document.getElementById('id_discount_amount').value) || 0;
-    const timbre = parseFloat(document.getElementById('id_timbre_fiscal').value) || 0;
-    const otherTaxes = parseFloat(document.getElementById('id_other_taxes').value) || 0;
+    const discountInput = document.getElementById('id_discount_amount');
+    const timbreInput = document.getElementById('id_timbre_fiscal');
+    const otherTaxesInput = document.getElementById('id_other_taxes');
     
-    const discountedSubtotal = subtotal - discount;
-    const tva = discountedSubtotal * 0.19; // 19% TVA
+    // Ensure all values are valid numbers
+    const discount = discountInput ? (parseFloat(discountInput.value) || 0) : 0;
+    const timbre = timbreInput ? (parseFloat(timbreInput.value) || 0) : 0;
+    const otherTaxes = otherTaxesInput ? (parseFloat(otherTaxesInput.value) || 0) : 0;
+    
+    const discountedSubtotal = Math.max(0, subtotal - discount);
+    
+    // Validate TVA_RATE before calculation
+    const tvaRate = isNaN(TVA_RATE) ? 0.19 : TVA_RATE; // Default to 19% if invalid
+    const tva = discountedSubtotal * tvaRate;
+    
     const total = discountedSubtotal + tva + timbre + otherTaxes;
     
-    document.getElementById('subtotal-display').textContent = subtotal.toFixed(2) + ' DA';
-    document.getElementById('discount-display').textContent = discount.toFixed(2) + ' DA';
-    document.getElementById('tva-display').textContent = tva.toFixed(2) + ' DA';
-    document.getElementById('timbre-display').textContent = timbre.toFixed(2) + ' DA';
-    document.getElementById('other-taxes-display').textContent = otherTaxes.toFixed(2) + ' DA';
-    document.getElementById('total-display').textContent = total.toFixed(2) + ' DA';
-}
-
-// Add event listeners to existing rows
-function addLineEventListeners(row) {
-    const quantityInput = row.querySelector('.quantity-input');
-    const priceInput = row.querySelector('.price-input');
+    // Debug logging
+    console.log('Calculation values:', {
+        subtotal,
+        discount,
+        discountedSubtotal,
+        tvaRate,
+        tva,
+        timbre,
+        otherTaxes,
+        total
+    });
     
-    if (quantityInput) {
-        quantityInput.addEventListener('input', () => calculateLineTotal(row));
-    }
-    if (priceInput) {
-        priceInput.addEventListener('input', () => calculateLineTotal(row));
-    }
+    // Update display elements with validation
+    const subtotalDisplay = document.getElementById('subtotal-display');
+    const discountDisplay = document.getElementById('discount-display');
+    const tvaDisplay = document.getElementById('tva-display');
+    const timbreDisplay = document.getElementById('timbre-display');
+    const otherTaxesDisplay = document.getElementById('other-taxes-display');
+    const totalDisplay = document.getElementById('total-display');
+    
+    if (subtotalDisplay) subtotalDisplay.textContent = (isNaN(subtotal) ? 0 : subtotal).toFixed(2) + ' DA';
+    if (discountDisplay) discountDisplay.textContent = (isNaN(discount) ? 0 : discount).toFixed(2) + ' DA';
+    if (tvaDisplay) tvaDisplay.textContent = (isNaN(tva) ? 0 : tva).toFixed(2) + ' DA';
+    if (timbreDisplay) timbreDisplay.textContent = (isNaN(timbre) ? 0 : timbre).toFixed(2) + ' DA';
+    if (otherTaxesDisplay) otherTaxesDisplay.textContent = (isNaN(otherTaxes) ? 0 : otherTaxes).toFixed(2) + ' DA';
+    if (totalDisplay) totalDisplay.textContent = (isNaN(total) ? 0 : total).toFixed(2) + ' DA';
 }
 
-// Initialize
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // Update TVA label with current rate
+    const tvaLabel = document.getElementById('tva-label');
+    if (tvaLabel) {
+        tvaLabel.textContent = `T.V.A. (${COMPANY_DATA.tva_rate}%):`;
+    }
+    
+    // Add event listeners to existing rows
     document.querySelectorAll('.invoice-line-row').forEach(addLineEventListeners);
     
-    // Add listeners to tax fields
+    // Add event listeners to summary fields
     ['id_discount_amount', 'id_timbre_fiscal', 'id_other_taxes'].forEach(id => {
         const element = document.getElementById(id);
         if (element) {
             element.addEventListener('input', calculateTotals);
+            element.addEventListener('change', calculateTotals);
         }
     });
     
+    // Initial calculation
     calculateTotals();
 });
 </script>

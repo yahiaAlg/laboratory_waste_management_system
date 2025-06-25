@@ -44,6 +44,9 @@ def invoice_list(request):
 
 @login_required
 def invoice_create(request):
+    company = Company.objects.first()
+    products = Product.objects.filter(is_active=True).order_by('code', 'name')  # Add this line
+    
     if request.method == 'POST':
         form = InvoiceForm(request.POST)
         formset = InvoiceLineFormSet(request.POST)
@@ -68,6 +71,8 @@ def invoice_create(request):
     context = {
         'form': form,
         'formset': formset,
+        'company': company,
+        'products': products,  # Add this line
         'title': 'Créer une facture'
     }
     return render(request, 'invoices/invoice_form.html', context)
@@ -75,6 +80,8 @@ def invoice_create(request):
 @login_required
 def invoice_update(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
+    company = Company.objects.first()
+    products = Product.objects.filter(is_active=True).order_by('code', 'name')  # Add this line
     
     if invoice.status == 'paid':
         messages.error(request, 'Impossible de modifier une facture payée.')
@@ -98,6 +105,8 @@ def invoice_update(request, pk):
         'form': form,
         'formset': formset,
         'invoice': invoice,
+        'company': company,
+        'products': products,  # Add this line
         'title': 'Modifier la facture'
     }
     return render(request, 'invoices/invoice_form.html', context)
@@ -117,21 +126,33 @@ def invoice_print(request, pk):
 @login_required
 def get_product_data(request):
     """AJAX view to get product data for invoice lines"""
-    product_id = request.GET.get('product_id')
-    if product_id:
-        try:
-            product = Product.objects.get(pk=product_id)
-            data = {
-                'description': product.name,
-                'unit': product.unit,
-                'unit_price': str(product.unit_price),
-                'code': product.code,
-            }
-            return JsonResponse(data)
-        except Product.DoesNotExist:
-            pass
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
     
-    return JsonResponse({'error': 'Product not found'}, status=404)
+    product_id = request.GET.get('product_id')
+    
+    if not product_id:
+        return JsonResponse({'error': 'Product ID is required'}, status=400)
+    
+    try:
+        product_id = int(product_id)
+        product = Product.objects.get(pk=product_id)
+        
+        data = {
+            'success': True,
+            'description': product.name,
+            'unit': product.unit,
+            'unit_price': str(product.unit_price),
+            'code': product.code,
+        }
+        return JsonResponse(data)
+        
+    except ValueError:
+        return JsonResponse({'error': 'Invalid product ID format'}, status=400)
+    except Product.DoesNotExist:
+        return JsonResponse({'error': 'Product not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': 'Server error occurred'}, status=500)
 
 @login_required
 def invoice_status_update(request, pk):

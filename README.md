@@ -241,6 +241,7 @@ project/
 │       └── views.py
 ├── config/
 │   ├── settings.py
+│   ├── resources.py
 │   ├── urls.py
 │   └── wsgi.py
 ├── db.sqlite3
