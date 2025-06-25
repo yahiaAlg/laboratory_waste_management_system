@@ -1,8 +1,12 @@
+# apps/company/admin.py
 from django.contrib import admin
+from import_export.admin import ImportExportModelAdmin
 from .models import Company
+from config.resources import CompanyResource
 
 @admin.register(Company)
-class CompanyAdmin(admin.ModelAdmin):
+class CompanyAdmin(ImportExportModelAdmin):
+    resource_class = CompanyResource
     list_display = ('name', 'city', 'phone', 'email')
     search_fields = ('name', 'city', 'phone', 'email', 'nif', 'rc')
     readonly_fields = ('created_at', 'updated_at')

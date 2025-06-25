@@ -1,8 +1,12 @@
+# apps/suppliers/admin.py
 from django.contrib import admin
+from import_export.admin import ImportExportModelAdmin
 from .models import Supplier
+from config.resources import SupplierResource
 
 @admin.register(Supplier)
-class SupplierAdmin(admin.ModelAdmin):
+class SupplierAdmin(ImportExportModelAdmin):
+    resource_class = SupplierResource
     list_display = ('name', 'contact_person', 'city', 'phone', 'email', 'rating', 'is_active')
     list_filter = ('is_active', 'rating', 'city')
     search_fields = ('name', 'contact_person', 'phone', 'email', 'nif', 'rc')

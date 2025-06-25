@@ -26,6 +26,8 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     'django_bootstrap5',
+    # django import export
+    'import_export',
     
     # Local apps
     'apps.authentication',

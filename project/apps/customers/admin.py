@@ -1,8 +1,18 @@
+# apps/customers/admin.py
 from django.contrib import admin
-from .models import Customer
+from import_export.admin import ImportExportModelAdmin
+from .models import Customer, City
+from config.resources import CustomerResource, CityResource
+
+@admin.register(City)
+class CityAdmin(ImportExportModelAdmin):
+    resource_class = CityResource
+    list_display = ('name', 'code')
+    search_fields = ('name', 'code')
 
 @admin.register(Customer)
-class CustomerAdmin(admin.ModelAdmin):
+class CustomerAdmin(ImportExportModelAdmin):
+    resource_class = CustomerResource
     list_display = ('name', 'customer_type', 'city', 'phone', 'email', 'is_active')
     list_filter = ('customer_type', 'is_active', 'city')
     search_fields = ('name', 'phone', 'email', 'nif', 'rc')

@@ -1,6 +1,9 @@
+# apps/invoices/admin.py
 from django.contrib import admin
 from django.utils.html import format_html
+from import_export.admin import ImportExportModelAdmin
 from .models import Invoice, InvoiceLine, Payment
+from config.resources import InvoiceResource, InvoiceLineResource, PaymentResource
 
 class InvoiceLineInline(admin.TabularInline):
     model = InvoiceLine
@@ -15,7 +18,8 @@ class PaymentInline(admin.TabularInline):
     fields = ('payment_date', 'amount', 'payment_method', 'reference', 'notes', 'created_by', 'created_at')
 
 @admin.register(Invoice)
-class InvoiceAdmin(admin.ModelAdmin):
+class InvoiceAdmin(ImportExportModelAdmin):
+    resource_class = InvoiceResource
     list_display = ('invoice_number', 'customer', 'invoice_date', 'due_date', 'total_ttc', 'status_colored', 'created_by')
     list_filter = ('status', 'invoice_date', 'due_date', 'payment_method')
     search_fields = ('invoice_number', 'customer__name', 'notes')
@@ -66,8 +70,16 @@ class InvoiceAdmin(admin.ModelAdmin):
         )
     status_colored.short_description = 'Statut'
 
+@admin.register(InvoiceLine)
+class InvoiceLineAdmin(ImportExportModelAdmin):
+    resource_class = InvoiceLineResource
+    list_display = ('invoice', 'product', 'quantity', 'unit_price', 'line_total')
+    list_filter = ('invoice__status', 'product__category')
+    search_fields = ('invoice__invoice_number', 'product__name', 'description')
+
 @admin.register(Payment)
-class PaymentAdmin(admin.ModelAdmin):
+class PaymentAdmin(ImportExportModelAdmin):
+    resource_class = PaymentResource
     list_display = ('invoice', 'amount', 'payment_date', 'payment_method', 'reference', 'created_by')
     list_filter = ('payment_method', 'payment_date')
     search_fields = ('invoice__invoice_number', 'reference', 'notes')

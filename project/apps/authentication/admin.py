@@ -1,9 +1,12 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
+from import_export.admin import ImportExportModelAdmin
 from .models import User
+from config.resources import UserResource
 
-class CustomUserAdmin(UserAdmin):
+class CustomUserAdmin(UserAdmin, ImportExportModelAdmin):
+    resource_class = UserResource
     list_display = ('username', 'email', 'first_name', 'last_name', 'role', 'phone', 'is_active')
     list_filter = ('is_active', 'role', 'created_at')
     search_fields = ('username', 'email', 'first_name', 'last_name', 'phone')
