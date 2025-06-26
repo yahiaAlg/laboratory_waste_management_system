@@ -104,6 +104,10 @@ function Initialize-Project {
         Write-Status "Populating cities data..."
         & $PythonCmd $ManagePy populate_cities
     }
+    if (Test-Path "apps\authentication\management\commands\create_superuser.py") {
+        Write-Status "create admin user..."
+        & $PythonCmd $ManagePy create_superuser
+    }
     
     Invoke-CollectStatic
     
@@ -120,32 +124,7 @@ function Start-DevelopmentServer {
     Write-Status "Server will be available at: http://127.0.0.1:8000"
     Write-Status "Admin panel: http://127.0.0.1:8000/admin"
     Write-Host ""
-    
-    # Start server in background job
-    $job = Start-Job -ScriptBlock {
-        param($PythonCmd, $ManagePy)
-        & $PythonCmd $ManagePy runserver 127.0.0.1:8000
-    } -ArgumentList $PythonCmd, $ManagePy
-    
-    # Wait for server to start
-    Start-Sleep -Seconds 4
-    
-    # Try to open browser with error handling
-    Write-Status "Opening browser..."
-    try {
-        # Add firewall exception if needed (requires admin)
-        if ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent().IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-            netsh advfirewall firewall add rule name="Django Dev Server" dir=in action=allow protocol=TCP localport=8000 2>$null
-        }
-        
-        Start-Process "http://127.0.0.1:8000"
-    }
-    catch {
-        Write-Warning "Could not open browser automatically. Please manually navigate to: http://127.0.0.1:8000"
-    }
-    
-    # Wait for and display job output
-    Receive-Job -Job $job -Wait
+    & $PythonCmd $ManagePy runserver
 }
 
 # Run Django shell
