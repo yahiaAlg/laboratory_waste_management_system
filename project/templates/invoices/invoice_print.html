@@ -147,11 +147,20 @@
             right: 20px;
             z-index: 1000;
         }
+        .email-button {
+            position: fixed;
+            top: 20px;
+            right: 125px;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
     <button onclick="window.print()" class="print-button no-print" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
         Imprimer
+    </button>
+    <button onclick="window.location.href='mailto:';" class="email-button no-print" style="padding: 10px 20px; background:rgb(0, 255, 238); color: white; border: none; border-radius: 5px; cursor: pointer;">
+        Email
     </button>
     
     <!-- Invoice Header -->
@@ -251,7 +260,7 @@
     <div class="totals-section">
         <div class="notes-section">
             <strong>Arrêtée la présente facture en toutes taxes à la somme de</strong><br><br>
-            <em>{{ invoice.total_ttc|floatformat:2 }} Dinars Algériens</em><br><br>
+            <em id="montant-textuelle">{{ invoice.total_ttc|floatformat:2 }} Dinars Algériens</em><br><br>
             {% if invoice.notes %}
                 {{ invoice.notes|linebreaks }}
             {% endif %}
@@ -301,5 +310,213 @@
         </div>
         {% endif %}
     </div>
+    <script>
+        const units = [
+            "zéro", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix",
+            "onze", "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf"
+        ];
+
+        const tens = [
+            "", "", "vingt", "trente", "quarante", "cinquante", "soixante",
+            "soixante", "quatre-vingt", "quatre-vingt"
+        ];
+
+        function digitToFrench(digit) {
+            const digitWords = ["zéro", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf"];
+            return digitWords[digit];
+        }
+
+        function numberToFrench(num) {
+            if (num === 0) {
+                return units[0];
+            }
+
+            if (num < 0 || num > 999999999999) {  // Limiting to billions for simplicity
+                return "Number out of range";
+            }
+
+            if (num < 20) {
+                return units[num];
+            }
+
+            if (num < 100) {
+                if (num < 70) {
+                    const ten = Math.floor(num / 10);
+                    const unit = num % 10;
+                    if (unit === 0) {
+                        return tens[ten];
+                    } else if (ten === 7 || ten === 8 || ten === 9) {
+                        if (num < 80) {
+                            const remainder = num - 60;
+                            if (remainder < 10) {
+                                return `soixante-${units[remainder]}`;
+                            } else {
+                                return `soixante-${numberToFrench(remainder)}`;
+                            }
+                        } else if (num < 90) {
+                            const remainder = num - 80;
+                            if (remainder < 10) {
+                                return `quatre-vingt-${units[remainder]}`;
+                            } else {
+                                return `quatre-vingt-${numberToFrench(remainder)}`;
+                            }
+                        } else {
+                            const remainder = num - 90;
+                            if (remainder < 10) {
+                                return `quatre-vingt-dix-${units[remainder]}`;
+                            } else {
+                                return `quatre-vingt-dix-${numberToFrench(remainder)}`;
+                            }
+                        }
+                    } else {
+                        if (ten === 8 || ten === 9) {
+                            if (unit === 0) {
+                                return `${tens[ten]}s`;
+                            } else {
+                                return `${tens[ten]}-${units[unit]}`;
+                            }
+                        } else {
+                            return `${tens[ten]}-${units[unit]}`;
+                        }
+                    }
+                } else {
+                    if (num === 70) {
+                        return "soixante-dix";
+                    } else if (num === 80) {
+                        return "quatre-vingts";
+                    } else if (num === 90) {
+                        return "quatre-vingt-dix";
+                    } else {
+                        if (num < 80) {
+                            const remainder = num - 60;
+                            if (remainder < 10) {
+                                return `soixante-${units[remainder]}`;
+                            } else {
+                                return `soixante-${numberToFrench(remainder)}`;
+                            }
+                        } else if (num < 90) {
+                            const remainder = num - 80;
+                            if (remainder < 10) {
+                                return `quatre-vingt-${units[remainder]}`;
+                            } else {
+                                return `quatre-vingt-${numberToFrench(remainder)}`;
+                            }
+                        } else {
+                            const remainder = num - 90;
+                            if (remainder < 10) {
+                                return `quatre-vingt-dix-${units[remainder]}`;
+                            } else {
+                                return `quatre-vingt-dix-${numberToFrench(remainder)}`;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (num < 1000) {
+                const hundred = Math.floor(num / 100);
+                const remainder = num % 100;
+                let hundredWord;
+                if (hundred === 1) {
+                    hundredWord = "cent";
+                } else {
+                    hundredWord = `${units[hundred]} cents`;
+                }
+                if (hundred === 1 && remainder === 0) {
+                    return hundredWord;
+                } else {
+                    if (remainder === 0) {
+                        return hundredWord;
+                    } else {
+                        return `${hundredWord} ${numberToFrench(remainder)}`;
+                    }
+                }
+            }
+
+            if (num < 1000000) {
+                const thousand = Math.floor(num / 1000);
+                const remainder = num % 1000;
+                let thousandWord;
+                if (thousand === 1) {
+                    thousandWord = "mille";
+                } else {
+                    thousandWord = `${numberToFrench(thousand)} mille`;
+                }
+                if (remainder === 0) {
+                    return thousandWord;
+                } else {
+                    return `${thousandWord} ${numberToFrench(remainder)}`;
+                }
+            }
+
+            if (num < 1000000000) {
+                const million = Math.floor(num / 1000000);
+                const remainder = num % 1000000;
+                let millionWord;
+                if (million === 1) {
+                    millionWord = "un million";
+                } else {
+                    millionWord = `${numberToFrench(million)} millions`;
+                }
+                if (remainder === 0) {
+                    return millionWord;
+                } else {
+                    return `${millionWord} ${numberToFrench(remainder)}`;
+                }
+            }
+
+            if (num < 1000000000000) {
+                const billion = Math.floor(num / 1000000000);
+                const remainder = num % 1000000000;
+                let billionWord;
+                if (billion === 1) {
+                    billionWord = "un milliard";
+                } else {
+                    billionWord = `${numberToFrench(billion)} milliards`;
+                }
+                if (remainder === 0) {
+                    return billionWord;
+                } else {
+                    return `${billionWord} ${numberToFrench(remainder)}`;
+                }
+            }
+
+            return "Number out of range";
+        }
+
+        function replaceMontantTextuelle() {
+            const element = document.getElementById('montant-textuelle');
+            if (element) {
+                const text = element.textContent;
+                const numberMatch = text.match(/\d+\.?\d*/);
+                if (numberMatch) {
+                    const numberStr = numberMatch[0];
+                    const numberParts = numberStr.split('.');
+                    const integerPart = parseInt(numberParts[0], 10);
+                    let decimalPartStr = '';
+
+                    // Convert the integer part to French words
+                    const integerInFrench = numberToFrench(integerPart);
+
+                    // Handle the decimal part if it exists
+                    if (numberParts.length > 1) {
+                        const decimalPart = numberParts[1];
+                        let decimalPartInFrench = [];
+                        for (let i = 0; i < decimalPart.length; i++) {
+                            const digit = parseInt(decimalPart.charAt(i), 10);
+                            decimalPartInFrench.push(digitToFrench(digit));
+                        }
+                        decimalPartStr = ` virgule ${decimalPartInFrench.join(' ')}`;
+                    }
+
+                    const frenchText = `${integerInFrench}${decimalPartStr} Dinars Algériens`;
+                    element.textContent = frenchText;
+                }
+            }
+        }
+
+        // Call the function to replace the number in 'montant-textuelle'
+        replaceMontantTextuelle();
+    </script>
 </body>
 </html>
