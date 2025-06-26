@@ -104,10 +104,6 @@ function Initialize-Project {
         Write-Status "Populating cities data..."
         & $PythonCmd $ManagePy populate_cities
     }
-    if (Test-Path "apps\authentication\management\commands\create_superuser.py") {
-        Write-Status "create admin user..."
-        & $PythonCmd $ManagePy create_superuser
-    }
     
     Invoke-CollectStatic
     
@@ -124,7 +120,22 @@ function Start-DevelopmentServer {
     Write-Status "Server will be available at: http://127.0.0.1:8000"
     Write-Status "Admin panel: http://127.0.0.1:8000/admin"
     Write-Host ""
-    & $PythonCmd $ManagePy runserver
+    
+    # Start server in background job
+    $job = Start-Job -ScriptBlock {
+        param($PythonCmd, $ManagePy)
+        & $PythonCmd $ManagePy runserver
+    } -ArgumentList $PythonCmd, $ManagePy
+    
+    # Wait a moment for server to start
+    Start-Sleep -Seconds 3
+    
+    # Open browser
+    Write-Status "Opening browser..."
+    Start-Process "http://127.0.0.1:8000"
+    
+    # Wait for and display job output
+    Receive-Job -Job $job -Wait
 }
 
 # Run Django shell
