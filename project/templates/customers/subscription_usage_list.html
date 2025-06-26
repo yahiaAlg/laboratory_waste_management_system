@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Utilisations - {{ subscription.product.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Utilisations de l'abonnement</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'customers:list' %}">Clients</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'customers:detail' subscription.customer.pk %}">{{ subscription.customer.name }}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'customers:subscription_detail' subscription.pk %}">{{ subscription.product.name }}</a></li>
+                    <li class="breadcrumb-item active">Utilisations</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="{% url 'customers:subscription_usage_create' subscription.pk %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nouvelle utilisation
+            </a>
+            <a href="{% url 'customers:subscription_detail' subscription.pk %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+        </div>
+    </div>
+
+    <!-- Subscription Info Card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-3">
+                    <h5 class="mb-1">{{ subscription.product.name }}</h5>
+                    <small class="text-muted">{{ subscription.customer.name }}</small>
+                </div>
+                <div class="col-md-2">
+                    <strong>{{ subscription.fixed_payment_amount }} DA</strong>
+                    <small class="d-block text-muted">Montant forfaitaire</small>
+                </div>
+                <div class="col-md-3">
+                    <strong>{{ remaining_quantity }} / {{ subscription.max_quantity_allowed }}</strong>
+                    <small class="d-block text-muted">Quantité restante</small>
+                </div>
+                <div class="col-md-2">
+                    <strong>{{ subscription.get_billing_cycle_display }}</strong>
+                    <small class="d-block text-muted">Cycle</small>
+                </div>
+                <div class="col-md-2">
+                    {% if subscription.is_active %}
+                        <span class="badge bg-success">Actif</span>
+                    {% else %}
+                        <span class="badge bg-danger">Inactif</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Usage List -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list"></i> Historique des utilisations
+                {% if page_obj.paginator.count %}
+                    <span class="badge bg-secondary ms-2">{{ page_obj.paginator.count }}</span>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if page_obj %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date d'utilisation</th>
+                                <th>Quantité utilisée</th>
+                                <th>Référence</th>
+                                <th>Notes</th>
+                                <th>Créé par</th>
+                                <th>Date de création</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usage in page_obj %}
+                            <tr>
+                                <td>
+                                    <strong>{{ usage.usage_date|date:"d/m/Y" }}</strong>
+                                    <small class="d-block text-muted">{{ usage.usage_date|date:"l" }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ usage.quantity_used }}</span>
+                                </td>
+                                <td>
+                                    {% if usage.reference %}
+                                        <code>{{ usage.reference }}</code>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if usage.notes %}
+                                        <span title="{{ usage.notes }}">{{ usage.notes|truncatechars:50 }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-2">
+                                            <i class="fas fa-user text-white"></i>
+                                        </div>
+                                        <div>
+                                            <small class="fw-bold">{{ usage.created_by.get_full_name|default:usage.created_by.username }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ usage.created_at|date:"d/m/Y H:i" }}
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+                <!-- Summary Stats -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="border rounded p-3 bg-light">
+                            <h6 class="mb-2">Statistiques de la page</h6>
+                            <small class="text-muted">
+                                Affichage de {{ page_obj.start_index }} à {{ page_obj.end_index }} 
+                                sur {{ page_obj.paginator.count }} utilisations
+                            </small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="border rounded p-3 bg-light">
+                            <h6 class="mb-2">Quantité restante</h6>
+                            <div class="progress" style="height: 8px;">
+                                {% widthratio remaining_quantity subscription.max_quantity_allowed 100 as remaining_percent %}
+                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ remaining_percent }}%"></div>
+                            </div>
+                            <small class="text-muted">{{ remaining_quantity }} / {{ subscription.max_quantity_allowed }}</small>
+                        </div>
+                    </div>
+                </div>
+
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">Aucune utilisation enregistrée</h5>
+                    <p class="text-muted">Commencez par enregistrer la première utilisation de cet abonnement.</p>
+                    <a href="{% url 'customers:subscription_usage_create' subscription.pk %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Enregistrer une utilisation
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+}
+</style>
+{% endblock %}

@@ -1,14 +1,14 @@
 # project\config\resources.py
 from import_export import resources, fields
-from import_export.widgets import ForeignKeyWidget
+from import_export.widgets import ForeignKeyWidget, BooleanWidget, DateWidget
 from django.contrib.auth import get_user_model
 
 # Import all models
 from apps.authentication.models import User
 from apps.company.models import Company
-from apps.customers.models import City, Customer
-from apps.inventory.models import Category, Product, StockMovement
-from apps.invoices.models import Invoice, InvoiceLine, Payment
+from apps.customers.models import *
+from apps.inventory.models import *
+from apps.invoices.models import *
 from apps.suppliers.models import Supplier
 
 User = get_user_model()
@@ -201,3 +201,121 @@ class SupplierResource(resources.ModelResource):
                  'updated_at')
         export_order = ('id', 'name', 'contact_person', 'address_line1', 'city', 'state', 
                        'phone', 'email', 'rating', 'is_active')
+        
+        
+        
+class CityResource(resources.ModelResource):
+    class Meta:
+        model = City
+        fields = ('id', 'name', 'code')
+        export_order = ('id', 'name', 'code')
+
+class CustomerResource(resources.ModelResource):
+    state = fields.Field(
+        column_name='state',
+        attribute='state',
+        widget=ForeignKeyWidget(City, 'name')
+    )
+    
+    class Meta:
+        model = Customer
+        fields = (
+            'id', 'name', 'customer_type', 'address_line1', 'address_line2', 
+            'city', 'postal_code', 'state', 'phone', 'fax', 'email', 'activity',
+            'nis', 'rc', 'art', 'nif', 'credit_limit', 'payment_terms', 
+            'discount_rate', 'is_subscriber', 'is_active', 'created_at', 'updated_at'
+        )
+        export_order = (
+            'id', 'name', 'customer_type', 'activity', 'address_line1', 
+            'address_line2', 'city', 'postal_code', 'state', 'phone', 'fax', 
+            'email', 'nis', 'rc', 'art', 'nif', 'credit_limit', 'payment_terms', 
+            'discount_rate', 'is_subscriber', 'is_active', 'created_at', 'updated_at'
+        )
+
+class ProductSubscriptionResource(resources.ModelResource):
+    customer = fields.Field(
+        column_name='customer',
+        attribute='customer',
+        widget=ForeignKeyWidget(Customer, 'name')
+    )
+    
+    product = fields.Field(
+        column_name='product',
+        attribute='product',
+        widget=ForeignKeyWidget(Product, 'name')
+    )
+    
+    start_date = fields.Field(
+        column_name='start_date',
+        attribute='start_date',
+        widget=DateWidget()
+    )
+    
+    end_date = fields.Field(
+        column_name='end_date',
+        attribute='end_date',
+        widget=DateWidget()
+    )
+    
+    is_active = fields.Field(
+        column_name='is_active',
+        attribute='is_active',
+        widget=BooleanWidget()
+    )
+    
+    class Meta:
+        model = ProductSubscription
+        fields = (
+            'id', 'customer', 'product', 'fixed_payment_amount', 
+            'max_quantity_allowed', 'is_active', 'start_date', 'end_date',
+            'billing_cycle', 'created_at', 'updated_at'
+        )
+        export_order = (
+            'id', 'customer', 'product', 'fixed_payment_amount', 
+            'max_quantity_allowed', 'billing_cycle', 'is_active', 
+            'start_date', 'end_date', 'created_at', 'updated_at'
+        )
+
+class SubscriptionUsageResource(resources.ModelResource):
+    subscription = fields.Field(
+        column_name='subscription',
+        attribute='subscription',
+        widget=ForeignKeyWidget(ProductSubscription, 'id')
+    )
+    
+    customer_name = fields.Field(
+        column_name='customer_name',
+        attribute='subscription__customer__name',
+        readonly=True
+    )
+    
+    product_name = fields.Field(
+        column_name='product_name',
+        attribute='subscription__product__name',
+        readonly=True
+    )
+    
+    usage_date = fields.Field(
+        column_name='usage_date',
+        attribute='usage_date',
+        widget=DateWidget()
+    )
+    
+    created_by = fields.Field(
+        column_name='created_by',
+        attribute='created_by',
+        widget=ForeignKeyWidget(User, 'username')
+    )
+    
+    class Meta:
+        model = SubscriptionUsage
+        fields = (
+            'id', 'subscription', 'customer_name', 'product_name',
+            'quantity_used', 'usage_date', 'reference', 'notes',
+            'created_by', 'created_at'
+        )
+        export_order = (
+            'id', 'subscription', 'customer_name', 'product_name',
+            'quantity_used', 'usage_date', 'reference', 'notes',
+            'created_by', 'created_at'
+        )

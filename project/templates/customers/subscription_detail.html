@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Détail Abonnement - {{ subscription.product.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Détail de l'abonnement</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'customers:list' %}">Clients</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'customers:detail' subscription.customer.pk %}">{{ subscription.customer.name }}</a></li>
+                    <li class="breadcrumb-item active">{{ subscription.product.name }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="{% url 'customers:subscription_usage_create' subscription.pk %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Enregistrer utilisation
+            </a>
+            <a href="{% url 'customers:subscription_usage_list' subscription.pk %}" class="btn btn-outline-primary">
+                <i class="fas fa-list"></i> Voir toutes les utilisations
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Subscription Details -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-box"></i> {{ subscription.product.name }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Client:</strong></td>
+                                    <td>{{ subscription.customer.name }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Produit:</strong></td>
+                                    <td>{{ subscription.product.name }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Montant forfaitaire:</strong></td>
+                                    <td>{{ subscription.fixed_payment_amount }} DA</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Cycle de facturation:</strong></td>
+                                    <td>{{ subscription.get_billing_cycle_display }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Date de début:</strong></td>
+                                    <td>{{ subscription.start_date|date:"d/m/Y" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Date de fin:</strong></td>
+                                    <td>{% if subscription.end_date %}{{ subscription.end_date|date:"d/m/Y" }}{% else %}Non définie{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Statut:</strong></td>
+                                    <td>
+                                        {% if subscription.is_active %}
+                                            <span class="badge bg-success">Actif</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Inactif</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usage Summary -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar"></i> Résumé d'utilisation
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <h4 class="text-primary">{{ remaining_quantity }}</h4>
+                        <small class="text-muted">Quantité restante</small>
+                    </div>
+                    
+                    <div class="progress mb-3" style="height: 10px;">
+                        {% widthratio current_period_usage subscription.max_quantity_allowed 100 as usage_percent %}
+                        <div class="progress-bar" role="progressbar" style="width: {{ usage_percent }}%"></div>
+                    </div>
+                    
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <strong>{{ current_period_usage }}</strong>
+                            <small class="d-block text-muted">Utilisé</small>
+                        </div>
+                        <div class="col-6">
+                            <strong>{{ subscription.max_quantity_allowed }}</strong>
+                            <small class="d-block text-muted">Maximum</small>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <small class="text-muted">
+                        <i class="fas fa-calendar"></i> 
+                        Période: {{ period_start|date:"d/m/Y" }} - {{ "now"|date:"d/m/Y" }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Usage -->
+    <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-history"></i> Utilisations récentes
+            </h5>
+            <a href="{% url 'customers:subscription_usage_list' subscription.pk %}" class="btn btn-sm btn-outline-primary">
+                Voir tout
+            </a>
+        </div>
+        <div class="card-body">
+            {% if recent_usage %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Quantité</th>
+                                <th>Référence</th>
+                                <th>Notes</th>
+                                <th>Créé par</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usage in recent_usage %}
+                            <tr>
+                                <td>{{ usage.usage_date|date:"d/m/Y" }}</td>
+                                <td>{{ usage.quantity_used }}</td>
+                                <td>{{ usage.reference|default:"-" }}</td>
+                                <td>{{ usage.notes|truncatechars:50|default:"-" }}</td>
+                                <td>{{ usage.created_by.get_full_name|default:usage.created_by.username }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Aucune utilisation enregistrée</p>
+                    <a href="{% url 'customers:subscription_usage_create' subscription.pk %}" class="btn btn-primary">
+                        Enregistrer la première utilisation
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

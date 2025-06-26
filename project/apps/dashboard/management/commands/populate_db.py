@@ -14,7 +14,7 @@ django.setup()
 # Import your models
 from apps.authentication.models import User
 from apps.company.models import Company
-from apps.customers.models import City, Customer
+from apps.customers.models import City, Customer, ProductSubscription, SubscriptionUsage
 from apps.inventory.models import Category, Product, StockMovement
 from apps.invoices.models import Invoice, InvoiceLine, Payment
 from apps.suppliers.models import Supplier
@@ -50,6 +50,9 @@ class Command(BaseCommand):
         # Create suppliers
         suppliers = self.create_suppliers()
         
+        # Create product subscriptions
+        self.create_product_subscriptions(customers, products, users)        
+        
         # Create stock movements
         self.create_stock_movements(products, users)
         
@@ -66,6 +69,9 @@ class Command(BaseCommand):
         StockMovement.objects.all().delete()
         Product.objects.all().delete()
         Category.objects.all().delete()
+        # Add these lines for subscription cleanup
+        SubscriptionUsage.objects.all().delete()
+        ProductSubscription.objects.all().delete()
         Customer.objects.all().delete()
         Supplier.objects.all().delete()
         Company.objects.all().delete()
@@ -547,6 +553,105 @@ class Command(BaseCommand):
                 self.stdout.write(f'  Supplier already exists: {supplier.name}')
         
         return created_suppliers
+
+
+    # Add this method after create_suppliers method
+    def create_product_subscriptions(self, customers, products, users):
+        self.stdout.write('Creating product subscriptions...')
+        
+        # Get an admin user for creating subscriptions
+        admin_user = next((u for u in users if u.role == 'admin'), users[0])
+        
+        # Select some customers to have subscriptions (about 60% of customers)
+        subscribing_customers = random.sample(customers, max(1, int(len(customers) * 0.6)))
+        
+        # Mark these customers as subscribers
+        for customer in subscribing_customers:
+            customer.is_subscriber = True
+            customer.save()
+            
+            # Create 1-3 subscriptions per customer
+            num_subscriptions = random.randint(1, 3)
+            
+            # Select random products for subscriptions (prefer services and equipment)
+            available_products = [p for p in products if p.category.name in ['Services', 'Équipements'] or not p.is_service]
+            selected_products = random.sample(available_products, min(num_subscriptions, len(available_products)))
+            
+            for product in selected_products:
+                # Skip if subscription already exists
+                if ProductSubscription.objects.filter(customer=customer, product=product).exists():
+                    continue
+                
+                # Calculate subscription parameters
+                base_price = product.unit_price
+                fixed_payment = base_price * Decimal(str(random.uniform(0.7, 1.2)))  # 70-120% of base price
+                
+                if product.is_service:
+                    max_quantity = Decimal('1.00')  # Services usually 1 unit
+                else:
+                    max_quantity = Decimal(str(random.uniform(5.0, 20.0)))  # Physical products
+                
+                # Random dates
+                start_date = date.today() - timedelta(days=random.randint(30, 365))
+                billing_cycle = random.choice(['monthly', 'quarterly', 'yearly'])
+                
+                subscription = ProductSubscription.objects.create(
+                    customer=customer,
+                    product=product,
+                    fixed_payment_amount=fixed_payment,
+                    max_quantity_allowed=max_quantity,
+                    is_active=True,
+                    start_date=start_date,
+                    billing_cycle=billing_cycle,
+                )
+                
+                self.stdout.write(f'  Created subscription: {customer.name} - {product.name} ({billing_cycle})')
+                
+                # Create some usage records for this subscription
+                self.create_subscription_usage(subscription, admin_user)
+
+    def create_subscription_usage(self, subscription, user):
+        """Create sample usage records for a subscription"""
+        
+        # Create usage records for the last few months
+        today = date.today()
+        
+        # Determine how many months to go back based on billing cycle
+        months_back = {
+            'monthly': 3,
+            'quarterly': 6,
+            'yearly': 12
+        }.get(subscription.billing_cycle, 3)
+        
+        for month_offset in range(months_back):
+            usage_date = today - timedelta(days=30 * month_offset)
+            
+            # Skip if usage date is before subscription start
+            if usage_date < subscription.start_date:
+                continue
+            
+            # Random usage (50-90% of max allowed)
+            usage_percent = random.uniform(0.5, 0.9)
+            quantity_used = subscription.max_quantity_allowed * Decimal(str(usage_percent))
+            
+            # Skip if no meaningful usage
+            if quantity_used < Decimal('0.1'):
+                continue
+            
+            SubscriptionUsage.objects.create(
+                subscription=subscription,
+                quantity_used=quantity_used,
+                usage_date=usage_date,
+                reference=f'SUB-{random.randint(1000, 9999)}',
+                notes=random.choice([
+                    '',
+                    'Utilisation normale',
+                    'Pic d\'activité',
+                    'Consommation selon planning',
+                ]),
+                created_by=user,
+            )
+
 
     def create_stock_movements(self, products, users):
         self.stdout.write('Creating stock movements...')

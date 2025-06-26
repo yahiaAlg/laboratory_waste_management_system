@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">{{ title }}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'customers:list' %}">Clients</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'customers:detail' subscription.customer.pk %}">{{ subscription.customer.name }}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'customers:subscription_detail' subscription.pk %}">{{ subscription.product.name }}</a></li>
+                    <li class="breadcrumb-item active">Nouvelle utilisation</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="{% url 'customers:subscription_detail' subscription.pk %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Form -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-plus"></i> Enregistrer une utilisation
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <!-- Quantity Used -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.quantity_used.id_for_label }}" class="form-label">
+                                        <strong>Quantité utilisée <span class="text-danger">*</span></strong>
+                                    </label>
+                                    {{ form.quantity_used }}
+                                    {% if form.quantity_used.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.quantity_used.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Quantité restante disponible: <strong class="text-success">{{ remaining_quantity }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Usage Date -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.usage_date.id_for_label }}" class="form-label">
+                                        <strong>Date d'utilisation <span class="text-danger">*</span></strong>
+                                    </label>
+                                    {{ form.usage_date }}
+                                    {% if form.usage_date.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.usage_date.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reference -->
+                        <div class="mb-3">
+                            <label for="{{ form.reference.id_for_label }}" class="form-label">
+                                <strong>Référence</strong>
+                            </label>
+                            {{ form.reference }}
+                            {% if form.reference.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.reference.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Numéro de commande, facture ou autre référence (optionnel)
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="mb-4">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">
+                                <strong>Notes</strong>
+                            </label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.notes.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Commentaires ou détails supplémentaires (optionnel)
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'customers:subscription_detail' subscription.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Annuler
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Enregistrer l'utilisation
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subscription Info -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle"></i> Informations abonnement
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="mb-1">{{ subscription.product.name }}</h6>
+                        <small class="text-muted">{{ subscription.customer.name }}</small>
+                    </div>
+
+                    <hr>
+
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <strong class="text-primary">{{ subscription.fixed_payment_amount }} DA</strong>
+                            <small class="d-block text-muted">Montant forfaitaire</small>
+                        </div>
+                        <div class="col-6">
+                            <strong class="text-info">{{ subscription.get_billing_cycle_display }}</strong>
+                            <small class="d-block text-muted">Cycle</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small>Utilisation</small>
+                            <small>{{ remaining_quantity }} / {{ subscription.max_quantity_allowed }}</small>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            {% widthratio remaining_quantity subscription.max_quantity_allowed 100 as remaining_percent %}
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ remaining_percent }}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-lightbulb"></i>
+                        <strong>Conseil:</strong> Vérifiez que la quantité utilisée ne dépasse pas la quantité restante disponible.
+                    </div>
+
+                    {% if subscription.is_active %}
+                        <span class="badge bg-success w-100 py-2">
+                            <i class="fas fa-check-circle"></i> Abonnement actif
+                        </span>
+                    {% else %}
+                        <span class="badge bg-danger w-100 py-2">
+                            <i class="fas fa-times-circle"></i> Abonnement inactif
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Actions rapides</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'customers:subscription_usage_list' subscription.pk %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-list"></i> Voir toutes les utilisations
+                        </a>
+                        <a href="{% url 'customers:detail' subscription.customer.pk %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-user"></i> Fiche client
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-focus on quantity field
+    const quantityField = document.getElementById('{{ form.quantity_used.id_for_label }}');
+    if (quantityField) {
+        quantityField.focus();
+    }
+
+    // Set today's date as default for usage_date if empty
+    const dateField = document.getElementById('{{ form.usage_date.id_for_label }}');
+    if (dateField && !dateField.value) {
+        const today = new Date().toISOString().split('T')[0];
+        dateField.value = today;
+    }
+
+    // Real-time validation for quantity
+    const remainingQuantity = {{ remaining_quantity }};
+    if (quantityField) {
+        quantityField.addEventListener('input', function() {
+            const enteredQuantity = parseFloat(this.value) || 0;
+            const formText = this.parentElement.querySelector('.form-text');
+            
+            if (enteredQuantity > remainingQuantity) {
+                this.classList.add('is-invalid');
+                formText.innerHTML = `<span class="text-danger">Quantité trop élevée! Maximum disponible: <strong>${remainingQuantity}</strong></span>`;
+            } else {
+                this.classList.remove('is-invalid');
+                formText.innerHTML = `Quantité restante disponible: <strong class="text-success">${remainingQuantity}</strong>`;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

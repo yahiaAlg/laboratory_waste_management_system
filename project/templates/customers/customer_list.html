@@ -17,22 +17,188 @@
     <div class="card shadow mb-4">
         <div class="card-body">
             <form method="get" class="row g-3">
-                <div class="col-md-6">
-                    <input type="text" name="search" class="form-control" placeholder="Rechercher par nom, email ou téléphone..." value="{{ search_query }}">
+                <!-- Basic Search -->
+                <div class="col-md-8">
+                    <input type="text" name="search" class="form-control" placeholder="Rechercher par nom, email, téléphone ou adresse..." value="{{ search_query }}">
                 </div>
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-outline-primary">
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary w-100">
                         <i class="fas fa-search me-1"></i>Rechercher
                     </button>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-outline-secondary w-100" data-bs-toggle="collapse" data-bs-target="#advancedFilters" aria-expanded="false">
+                        <i class="fas fa-filter me-1"></i>Filtres avancés
+                    </button>
+                </div>
+                
+                <!-- Advanced Filters (Collapsible) -->
+                <div class="collapse mt-3" id="advancedFilters">
+                    <div class="card card-body bg-light">
+                        <div class="row g-3">
+                            <!-- Customer Type Filter -->
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Type de client</label>
+                                <select name="customer_type" class="form-select form-select-sm">
+                                    <option value="">Tous les types</option>
+                                    <option value="individual" {% if customer_type == 'individual' %}selected{% endif %}>Particulier</option>
+                                    <option value="company" {% if customer_type == 'company' %}selected{% endif %}>Entreprise</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Subscription Status Filter -->
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Statut abonnement</label>
+                                <select name="subscription_status" class="form-select form-select-sm">
+                                    <option value="">Tous</option>
+                                    <option value="subscriber" {% if subscription_status == 'subscriber' %}selected{% endif %}>Abonnés</option>
+                                    <option value="non_subscriber" {% if subscription_status == 'non_subscriber' %}selected{% endif %}>Non-abonnés</option>
+                                    <option value="has_active_subscriptions" {% if subscription_status == 'has_active_subscriptions' %}selected{% endif %}>Avec abonnements actifs</option>
+                                    <option value="no_active_subscriptions" {% if subscription_status == 'no_active_subscriptions' %}selected{% endif %}>Sans abonnements actifs</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Active Status Filter -->
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Statut</label>
+                                <select name="status" class="form-select form-select-sm">
+                                    <option value="">Tous</option>
+                                    <option value="active" {% if status == 'active' %}selected{% endif %}>Actif</option>
+                                    <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Inactif</option>
+                                </select>
+                            </div>
+                            
+                            <!-- City Filter -->
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Ville</label>
+                                <input type="text" name="city" class="form-control form-control-sm" placeholder="Ville" value="{{ city }}">
+                            </div>
+                            
+                            <!-- Credit Limit Range -->
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Limite de crédit (DA)</label>
+                                <div class="row g-1">
+                                    <div class="col">
+                                        <input type="number" name="credit_limit_min" class="form-control form-control-sm" placeholder="Min" step="0.01" value="{{ credit_limit_min }}">
+                                    </div>
+                                    <div class="col-auto d-flex align-items-center">
+                                        <span class="small text-muted">à</span>
+                                    </div>
+                                    <div class="col">
+                                        <input type="number" name="credit_limit_max" class="form-control form-control-sm" placeholder="Max" step="0.01" value="{{ credit_limit_max }}">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Discount Rate Range -->
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Taux de remise (%)</label>
+                                <div class="row g-1">
+                                    <div class="col">
+                                        <input type="number" name="discount_rate_min" class="form-control form-control-sm" placeholder="Min" step="0.01" min="0" max="100" value="{{ discount_rate_min }}">
+                                    </div>
+                                    <div class="col-auto d-flex align-items-center">
+                                        <span class="small text-muted">à</span>
+                                    </div>
+                                    <div class="col">
+                                        <input type="number" name="discount_rate_max" class="form-control form-control-sm" placeholder="Max" step="0.01" min="0" max="100" value="{{ discount_rate_max }}">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Payment Terms Filter -->
+                            <div class="col-md-12">
+                                <label class="form-label small fw-bold">Délai de paiement (jours)</label>
+                                <select name="payment_terms" class="form-select form-select-sm">
+                                    <option value="">Tous les délais</option>
+                                    <option value="0" {% if payment_terms == '0' %}selected{% endif %}>Comptant (0 jours)</option>
+                                    <option value="15" {% if payment_terms == '15' %}selected{% endif %}>15 jours</option>
+                                    <option value="30" {% if payment_terms == '30' %}selected{% endif %}>30 jours</option>
+                                    <option value="45" {% if payment_terms == '45' %}selected{% endif %}>45 jours</option>
+                                    <option value="60" {% if payment_terms == '60' %}selected{% endif %}>60 jours</option>
+                                    <option value="90" {% if payment_terms == '90' %}selected{% endif %}>90 jours</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Filter Actions -->
+                            <div class="col-12">
+                                <div class="d-flex gap-2 pt-2">
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-search me-1"></i>Appliquer les filtres
+                                    </button>
+                                    <a href="{% url 'customers:list' %}" class="btn btn-outline-secondary btn-sm">
+                                        <i class="fas fa-times me-1"></i>Effacer les filtres
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>
     </div>
     
+    <!-- Active Filters Display -->
+    {% if search_query or customer_type or subscription_status or status or city or credit_limit_min or credit_limit_max or discount_rate_min or discount_rate_max or payment_terms %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-body py-2">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <span class="small fw-bold text-muted">Filtres actifs:</span>
+                
+                {% if search_query %}
+                <span class="badge bg-info">Recherche: "{{ search_query }}"</span>
+                {% endif %}
+                
+                {% if customer_type %}
+                <span class="badge bg-primary">Type: {% if customer_type == 'individual' %}Particulier{% else %}Entreprise{% endif %}</span>
+                {% endif %}
+                
+                {% if subscription_status %}
+                <span class="badge bg-success">
+                    {% if subscription_status == 'subscriber' %}Abonnés
+                    {% elif subscription_status == 'non_subscriber' %}Non-abonnés
+                    {% elif subscription_status == 'has_active_subscriptions' %}Avec abonnements actifs
+                    {% elif subscription_status == 'no_active_subscriptions' %}Sans abonnements actifs
+                    {% endif %}
+                </span>
+                {% endif %}
+                
+                {% if status %}
+                <span class="badge bg-{% if status == 'active' %}success{% else %}secondary{% endif %}">{% if status == 'active' %}Actif{% else %}Inactif{% endif %}</span>
+                {% endif %}
+                
+                {% if city %}
+                <span class="badge bg-secondary">Ville: {{ city }}</span>
+                {% endif %}
+                
+                {% if payment_terms %}
+                <span class="badge bg-warning">Paiement: {{ payment_terms }} jours</span>
+                {% endif %}
+                
+                {% if credit_limit_min or credit_limit_max %}
+                <span class="badge bg-info">Crédit: {% if credit_limit_min %}{{ credit_limit_min }}{% else %}0{% endif %} - {% if credit_limit_max %}{{ credit_limit_max }}{% else %}∞{% endif %} DA</span>
+                {% endif %}
+                
+                {% if discount_rate_min or discount_rate_max %}
+                <span class="badge bg-info">Remise: {% if discount_rate_min %}{{ discount_rate_min }}{% else %}0{% endif %} - {% if discount_rate_max %}{{ discount_rate_max }}{% else %}100{% endif %}%</span>
+                {% endif %}
+                
+                <a href="{% url 'customers:list' %}" class="btn btn-sm btn-outline-secondary ms-auto">
+                    <i class="fas fa-times"></i> Effacer tout
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
     <!-- Customers Table -->
     <div class="card shadow">
         <div class="card-body">
             {% if page_obj %}
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">{{ page_obj.paginator.count }} client{{ page_obj.paginator.count|pluralize }} trouvé{{ page_obj.paginator.count|pluralize }}</span>
+                </div>
+                
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead class="table-light">
@@ -42,6 +208,9 @@
                                 <th>Ville</th>
                                 <th>Téléphone</th>
                                 <th>Email</th>
+                                <th>Abonnement</th>
+                                <th>Forfait total</th>
+                                <th>Abonnements actifs</th>
                                 <th>Statut</th>
                                 <th>Actions</th>
                             </tr>
@@ -62,6 +231,41 @@
                                 <td>{{ customer.city }}</td>
                                 <td>{{ customer.phone|default:"-" }}</td>
                                 <td>{{ customer.email|default:"-" }}</td>
+                                <td>
+                                    {% if customer.is_subscriber %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check me-1"></i>Abonné
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">
+                                            <i class="fas fa-times me-1"></i>Non-abonné
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if customer.total_subscription_amount %}
+                                        <span class="fw-bold text-success">{{ customer.total_subscription_amount|floatformat:2 }} DA</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% with active_subs=customer.subscriptions.all %}
+                                        {% if active_subs %}
+                                            <span class="badge bg-info">{{ active_subs|length }}</span>
+                                            <small class="text-muted d-block">
+                                                {% for sub in active_subs|slice:":2" %}
+                                                    {{ sub.product.name }}{% if not forloop.last %}, {% endif %}
+                                                {% endfor %}
+                                                {% if active_subs|length > 2 %}
+                                                    <br><small class="text-muted">+{{ active_subs|length|add:"-2" }} autre{{ active_subs|length|add:"-2"|pluralize }}</small>
+                                                {% endif %}
+                                            </small>
+                                        {% else %}
+                                            <span class="text-muted">Aucun</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                </td>
                                 <td>
                                     <span class="status-indicator {% if customer.is_active %}active{% else %}inactive{% endif %}"></span>
                                     {% if customer.is_active %}Actif{% else %}Inactif{% endif %}
@@ -92,10 +296,10 @@
                     <ul class="pagination justify-content-center">
                         {% if page_obj.has_previous %}
                             <li class="page-item">
-                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">&lsaquo;&lsaquo;</a>
+                                <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&lsaquo;&lsaquo;</a>
                             </li>
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">&lsaquo;</a>
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&lsaquo;</a>
                             </li>
                         {% endif %}
                         
@@ -105,10 +309,10 @@
                         
                         {% if page_obj.has_next %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">&rsaquo;</a>
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&rsaquo;</a>
                             </li>
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">&rsaquo;&rsaquo;</a>
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&rsaquo;&rsaquo;</a>
                             </li>
                         {% endif %}
                     </ul>
@@ -118,7 +322,7 @@
                 <div class="text-center py-5">
                     <i class="fas fa-users fa-3x text-muted mb-3"></i>
                     <h5 class="text-muted">Aucun client trouvé</h5>
-                    <p class="text-muted">Commencez par ajouter votre premier client.</p>
+                    <p class="text-muted">Essayez de modifier vos critères de recherche ou ajoutez votre premier client.</p>
                     <a href="{% url 'customers:create' %}" class="btn btn-primary">
                         <i class="fas fa-plus me-2"></i>Ajouter un client
                     </a>
@@ -127,4 +331,20 @@
         </div>
     </div>
 </div>
+
+<style>
+.status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+.status-indicator.active {
+    background-color: #28a745;
+}
+.status-indicator.inactive {
+    background-color: #dc3545;
+}
+</style>
 {% endblock %}
