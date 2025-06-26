@@ -124,15 +124,25 @@ function Start-DevelopmentServer {
     # Start server in background job
     $job = Start-Job -ScriptBlock {
         param($PythonCmd, $ManagePy)
-        & $PythonCmd $ManagePy runserver
+        & $PythonCmd $ManagePy runserver 127.0.0.1:8000
     } -ArgumentList $PythonCmd, $ManagePy
     
-    # Wait a moment for server to start
-    Start-Sleep -Seconds 3
+    # Wait for server to start
+    Start-Sleep -Seconds 4
     
-    # Open browser
+    # Try to open browser with error handling
     Write-Status "Opening browser..."
-    Start-Process "http://127.0.0.1:8000"
+    try {
+        # Add firewall exception if needed (requires admin)
+        if ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent().IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+            netsh advfirewall firewall add rule name="Django Dev Server" dir=in action=allow protocol=TCP localport=8000 2>$null
+        }
+        
+        Start-Process "http://127.0.0.1:8000"
+    }
+    catch {
+        Write-Warning "Could not open browser automatically. Please manually navigate to: http://127.0.0.1:8000"
+    }
     
     # Wait for and display job output
     Receive-Job -Job $job -Wait
