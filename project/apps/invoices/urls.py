@@ -19,5 +19,7 @@ urlpatterns = [
     path('payment/<int:payment_pk>/delete/', views.payment_delete, name='payment_delete'),
     
     # API URLs
+    path('api/customer-subscriptions/', views.get_customer_subscriptions, name='api_customer_subscriptions'),
+
     path('api/product-data/', views.get_product_data, name='product_data'),
 ]

@@ -84,6 +84,24 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Customer Subscription Info -->
+                <div class="card shadow mb-4" id="subscription-info" style="display: none;">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="m-0 font-weight-bold">
+                            <i class="fas fa-crown me-2"></i>Client abonné - Produits avec tarifs préférentiels
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Ce client dispose d'abonnements actifs. Les prix préférentiels seront appliqués automatiquement.
+                        </div>
+                        <div id="subscriptions-list" class="row">
+                            <!-- Subscription details will be loaded here -->
+                        </div>
+                    </div>
+                </div>
                 
                 <!-- Invoice Lines -->
                 <div class="card shadow mb-4">
@@ -234,6 +252,21 @@
     min-width: 100%;
 }
 
+.subscription-badge {
+    font-size: 0.75em;
+    margin-left: 5px;
+}
+
+.subscription-info {
+    font-size: 0.875em;
+    color: #6c757d;
+}
+
+.quantity-warning {
+    color: #dc3545;
+    font-size: 0.75em;
+}
+
 @media (max-width: 768px) {
     .container-fluid {
         padding-left: 10px;
@@ -249,24 +282,16 @@
     }
 }
 </style>
-<input
-type="hidden"
-name="tva_rate"
-value="{{ company.tva_rate|default:19 }}"
->
+
+<input type="hidden" name="tva_rate" value="{{ company.tva_rate|default:19 }}">
+
 {% endblock %}
-{% comment %} hidden input for tva rate {% endcomment %}
 
 {% block extra_js %}
 <script>
-
 // Get company data from Django context
-// get the tva rate  from the company object 
-// Get company data from Django context - FIXED VERSION
 const tvaRateInput = document.querySelector('input[name="tva_rate"]');
 const tvaRateValue = tvaRateInput ? parseFloat(tvaRateInput.value) : 19;
-
-// Validate and ensure we have a valid number
 const validTvaRate = isNaN(tvaRateValue) ? 19 : tvaRateValue;
 
 const COMPANY_DATA = {
@@ -275,16 +300,104 @@ const COMPANY_DATA = {
 
 const TVA_RATE = COMPANY_DATA.tva_rate / 100;
 
-// Add debugging to see what values we're getting
-console.log('TVA Rate from input:', tvaRateInput?.value);
-console.log('Parsed TVA Rate:', validTvaRate);
-console.log('Final TVA Rate (decimal):', TVA_RATE);
-
-
-
 let lineIndex = {{ formset.total_form_count }};
+let customerSubscriptions = {};
+let currentCustomerId = null;
 
-// Add new invoice line
+// Customer selection change handler
+document.addEventListener('change', function(e) {
+    if (e.target.name === 'customer') {
+        const customerId = e.target.value;
+        currentCustomerId = customerId;
+        
+        if (customerId) {
+            loadCustomerSubscriptions(customerId);
+        } else {
+            hideSubscriptionInfo();
+            customerSubscriptions = {};
+        }
+    }
+});
+
+// Load customer subscriptions
+function loadCustomerSubscriptions(customerId) {
+    fetch(`/invoices/api/customer-subscriptions/?customer_id=${customerId}`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        customerSubscriptions = {};
+        
+        if (data.has_subscriptions) {
+            // Store subscriptions data
+            data.subscriptions.forEach(sub => {
+                customerSubscriptions[sub.product_id] = sub;
+            });
+            
+            showSubscriptionInfo(data.subscriptions);
+        } else {
+            hideSubscriptionInfo();
+        }
+        
+        // Update existing product lines with subscription info
+        updateExistingLines();
+    })
+    .catch(error => {
+        console.error('Error loading customer subscriptions:', error);
+        hideSubscriptionInfo();
+    });
+}
+
+// Show subscription information
+function showSubscriptionInfo(subscriptions) {
+    const subscriptionCard = document.getElementById('subscription-info');
+    const subscriptionsList = document.getElementById('subscriptions-list');
+    
+    let html = '';
+    subscriptions.forEach(sub => {
+        html += `
+            <div class="col-md-6 mb-3">
+                <div class="card bg-light">
+                    <div class="card-body p-3">
+                        <h6 class="card-title mb-2">
+                            <i class="fas fa-box me-1"></i>${sub.product_code} - ${sub.product_name}
+                        </h6>
+                        <div class="subscription-info">
+                            <div><strong>Prix abonné:</strong> ${parseFloat(sub.fixed_payment_amount).toFixed(2)} DA</div>
+                            <div><strong>Quantité restante:</strong> ${parseFloat(sub.remaining_quantity).toFixed(2)} / ${parseFloat(sub.max_quantity).toFixed(2)}</div>
+                            <div><strong>Cycle:</strong> ${sub.billing_cycle}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    subscriptionsList.innerHTML = html;
+    subscriptionCard.style.display = 'block';
+}
+
+// Hide subscription information
+function hideSubscriptionInfo() {
+    const subscriptionCard = document.getElementById('subscription-info');
+    subscriptionCard.style.display = 'none';
+}
+
+// Update existing lines with subscription info
+function updateExistingLines() {
+    document.querySelectorAll('.invoice-line-row').forEach(row => {
+        const productSelect = row.querySelector('.product-select');
+        if (productSelect && productSelect.value) {
+            updateLineSubscriptionInfo(row, productSelect.value);
+        }
+    });
+}
+
+// Add new invoice line with subscription support
 document.getElementById('addLineBtn').addEventListener('click', function() {
     const tbody = document.getElementById('invoice-lines-tbody');
     const totalForms = document.getElementById('id_invoiceline_set-TOTAL_FORMS');
@@ -318,7 +431,6 @@ document.getElementById('addLineBtn').addEventListener('click', function() {
     lineIndex++;
     totalForms.value = lineIndex;
     
-    // Add event listeners to new row
     addLineEventListeners(newRow);
     calculateTotals();
 });
@@ -340,77 +452,168 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Product selection change - FIXED VERSION
+// Product selection change with subscription support
 document.addEventListener('change', function(e) {
     if (e.target.classList.contains('product-select')) {
         const productId = e.target.value;
         const row = e.target.closest('tr');
         
         if (productId) {
-            // Show loading state
-            const descriptionField = row.querySelector('[name*="-description"]');
-            const unitField = row.querySelector('[name*="-unit"]');
-            const priceField = row.querySelector('[name*="-unit_price"]');
-            const referenceField = row.querySelector('[name*="-reference"]');
-            
-            // Clear fields first
-            descriptionField.value = '';
-            unitField.value = '';
-            priceField.value = '';
-            referenceField.value = '';
-            
-            // Add loading indicator
-            descriptionField.placeholder = 'Chargement...';
-            
-            // Make AJAX request
-            fetch('/invoices/api/product-data/?product_id=' + productId, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/json',
-                },
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Remove loading indicator
-                descriptionField.placeholder = '';
-                
-                // Populate fields with product data
-                if (data.description) {
-                    descriptionField.value = data.description;
-                }
-                if (data.unit) {
-                    unitField.value = data.unit;
-                }
-                if (data.unit_price) {
-                    priceField.value = parseFloat(data.unit_price).toFixed(2);
-                }
-                if (data.code) {
-                    referenceField.value = data.code;
-                }
-                
-                // Calculate line total after populating price
-                calculateLineTotal(row);
-            })
-            .catch(error => {
-                console.error('Error fetching product data:', error);
-                descriptionField.placeholder = 'Erreur lors du chargement';
-                
-                // Show user-friendly error message
-                alert('Erreur lors du chargement des données du produit. Veuillez réessayer.');
-            });
+            loadProductData(productId, row);
         } else {
-            // Clear all fields if no product selected
-            row.querySelector('[name*="-description"]').value = '';
-            row.querySelector('[name*="-unit"]').value = '';
-            row.querySelector('[name*="-unit_price"]').value = '';
-            row.querySelector('[name*="-reference"]').value = '';
-            calculateLineTotal(row);
+            clearLineData(row);
+        }
+    }
+});
+
+// Load product data with subscription support
+function loadProductData(productId, row) {
+    const descriptionField = row.querySelector('[name*="-description"]');
+    const unitField = row.querySelector('[name*="-unit"]');
+    const priceField = row.querySelector('[name*="-unit_price"]');
+    const referenceField = row.querySelector('[name*="-reference"]');
+    
+    // Clear fields first
+    clearLineData(row);
+    descriptionField.placeholder = 'Chargement...';
+    
+    // Build URL with customer_id if available
+    let url = `/invoices/api/product-data/?product_id=${productId}`;
+    if (currentCustomerId) {
+        url += `&customer_id=${currentCustomerId}`;
+    }
+    
+    fetch(url, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        descriptionField.placeholder = '';
+        
+        // Populate basic product data
+        if (data.description) descriptionField.value = data.description;
+        if (data.unit) unitField.value = data.unit;
+        if (data.code) referenceField.value = data.code;
+        
+        // Handle subscription pricing
+        if (data.is_subscribed) {
+            priceField.value = parseFloat(data.subscription_price).toFixed(2);
+            
+            // Add subscription badge
+            addSubscriptionBadge(row, data);
+            
+            // Show quantity warning if needed
+            showQuantityWarning(row, data);
+        } else {
+            priceField.value = parseFloat(data.unit_price).toFixed(2);
+            removeSubscriptionBadge(row);
+        }
+        
+        calculateLineTotal(row);
+    })
+    .catch(error => {
+        console.error('Error fetching product data:', error);
+        descriptionField.placeholder = 'Erreur lors du chargement';
+        alert('Erreur lors du chargement des données du produit. Veuillez réessayer.');
+    });
+}
+
+// Clear line data
+function clearLineData(row) {
+    row.querySelector('[name*="-description"]').value = '';
+    row.querySelector('[name*="-unit"]').value = '';
+    row.querySelector('[name*="-unit_price"]').value = '';
+    row.querySelector('[name*="-reference"]').value = '';
+    removeSubscriptionBadge(row);
+    calculateLineTotal(row);
+}
+
+// Add subscription badge to product field
+function addSubscriptionBadge(row, data) {
+    const productCell = row.querySelector('td:first-child');
+    let badge = productCell.querySelector('.subscription-badge');
+    
+    if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'badge bg-info subscription-badge';
+        productCell.appendChild(badge);
+    }
+    
+    badge.innerHTML = '<i class="fas fa-crown"></i> Abonné';
+    badge.title = `Prix abonné: ${data.subscription_price} DA | Restant: ${data.remaining_quantity}`;
+}
+
+// Remove subscription badge
+function removeSubscriptionBadge(row) {
+    const badge = row.querySelector('.subscription-badge');
+    if (badge) {
+        badge.remove();
+    }
+    
+    const warning = row.querySelector('.quantity-warning');
+    if (warning) {
+        warning.remove();
+    }
+}
+
+// Show quantity warning for subscriptions
+function showQuantityWarning(row, data) {
+    const quantityCell = row.querySelector('td:nth-child(5)');
+    let warning = quantityCell.querySelector('.quantity-warning');
+    
+    if (!warning) {
+        warning = document.createElement('div');
+        warning.className = 'quantity-warning';
+        quantityCell.appendChild(warning);
+    }
+    
+    const remaining = parseFloat(data.remaining_quantity);
+    if (remaining <= 0) {
+        warning.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Quota épuisé';
+    } else if (remaining < 10) {
+        warning.innerHTML = `<i class="fas fa-warning"></i> Reste: ${remaining}`;
+    } else {
+        warning.style.display = 'none';
+    }
+}
+
+// Update line subscription info
+function updateLineSubscriptionInfo(row, productId) {
+    const subscription = customerSubscriptions[productId];
+    if (subscription) {
+        addSubscriptionBadge(row, subscription);
+        showQuantityWarning(row, subscription);
+    } else {
+        removeSubscriptionBadge(row);
+    }
+}
+
+// Quantity input validation for subscriptions
+document.addEventListener('input', function(e) {
+    if (e.target.classList.contains('quantity-input')) {
+        const row = e.target.closest('tr');
+        const productSelect = row.querySelector('.product-select');
+        
+        if (productSelect && productSelect.value) {
+            const productId = productSelect.value;
+            const subscription = customerSubscriptions[productId];
+            
+            if (subscription) {
+                const quantity = parseFloat(e.target.value) || 0;
+                const remaining = parseFloat(subscription.remaining_quantity);
+                
+                if (quantity > remaining) {
+                    e.target.style.borderColor = '#dc3545';
+                    e.target.title = `Quantité demandée (${quantity}) dépasse le quota restant (${remaining})`;
+                } else {
+                    e.target.style.borderColor = '';
+                    e.target.title = '';
+                }
+            }
         }
     }
 });
@@ -447,7 +650,6 @@ function addLineEventListeners(row) {
 }
 
 // Calculate invoice totals
-// Calculate invoice totals - IMPROVED VERSION
 function calculateTotals() {
     let subtotal = 0;
     
@@ -460,32 +662,16 @@ function calculateTotals() {
     const timbreInput = document.getElementById('id_timbre_fiscal');
     const otherTaxesInput = document.getElementById('id_other_taxes');
     
-    // Ensure all values are valid numbers
     const discount = discountInput ? (parseFloat(discountInput.value) || 0) : 0;
     const timbre = timbreInput ? (parseFloat(timbreInput.value) || 0) : 0;
     const otherTaxes = otherTaxesInput ? (parseFloat(otherTaxesInput.value) || 0) : 0;
     
     const discountedSubtotal = Math.max(0, subtotal - discount);
-    
-    // Validate TVA_RATE before calculation
-    const tvaRate = isNaN(TVA_RATE) ? 0.19 : TVA_RATE; // Default to 19% if invalid
+    const tvaRate = isNaN(TVA_RATE) ? 0.19 : TVA_RATE;
     const tva = discountedSubtotal * tvaRate;
-    
     const total = discountedSubtotal + tva + timbre + otherTaxes;
     
-    // Debug logging
-    console.log('Calculation values:', {
-        subtotal,
-        discount,
-        discountedSubtotal,
-        tvaRate,
-        tva,
-        timbre,
-        otherTaxes,
-        total
-    });
-    
-    // Update display elements with validation
+    // Update display elements
     const subtotalDisplay = document.getElementById('subtotal-display');
     const discountDisplay = document.getElementById('discount-display');
     const tvaDisplay = document.getElementById('tva-display');
@@ -520,6 +706,13 @@ document.addEventListener('DOMContentLoaded', function() {
             element.addEventListener('change', calculateTotals);
         }
     });
+    
+    // Check if customer is already selected (for edit mode)
+    const customerSelect = document.querySelector('[name="customer"]');
+    if (customerSelect && customerSelect.value) {
+        currentCustomerId = customerSelect.value;
+        loadCustomerSubscriptions(customerSelect.value);
+    }
     
     // Initial calculation
     calculateTotals();

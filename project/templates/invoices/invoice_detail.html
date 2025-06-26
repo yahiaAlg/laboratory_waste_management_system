@@ -7,7 +7,14 @@
 <div class="container">
     <!-- Page Header -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Facture {{ invoice.invoice_number }}</h1>
+        <h1 class="h3 mb-0 text-gray-800">
+            Facture {{ invoice.invoice_number }}
+            {% if invoice.customer.is_subscriber %}
+            <span class="badge bg-info ms-2">
+                <i class="fas fa-crown me-1"></i>Client abonné
+            </span>
+            {% endif %}
+        </h1>
         <div>
             <a href="{% url 'invoices:print' invoice.pk %}" class="btn btn-success me-2" target="_blank">
                 <i class="fas fa-print me-2"></i>Imprimer
@@ -22,10 +29,149 @@
             </a>
         </div>
     </div>
+
+    <!-- Subscription Alert (if customer is subscribed and has active subscriptions) -->
+    {% if subscription_summary.has_subscriptions %}
+    <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h6 class="alert-heading mb-2">
+                    <i class="fas fa-crown me-2"></i>Client avec abonnements actifs
+                </h6>
+                <p class="mb-0">
+                    <strong>Montant total des abonnements:</strong> {{ subscription_summary.total_subscribed_amount|floatformat:2|intcomma }} DA
+                    <span class="ms-3">
+                        <strong>Quantité restante:</strong> {{ subscription_summary.total_remaining_quantity|floatformat:2|intcomma }}
+                    </span>
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#subscriptionDetails">
+                    <i class="fas fa-eye me-1"></i>Voir détails
+                </button>
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
     
     <div class="row">
         <!-- Invoice Details -->
         <div class="col-lg-8">
+            <!-- Subscription Details (Collapsible) -->
+            {% if subscription_summary.has_subscriptions %}
+            <div class="collapse mb-4" id="subscriptionDetails">
+                <div class="card shadow">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="m-0 font-weight-bold">
+                            <i class="fas fa-crown me-2"></i>Détails des abonnements
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for sub_data in customer_subscriptions %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card h-100 {% if sub_data.is_over_limit %}border-danger{% else %}border-success{% endif %}">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            {{ sub_data.subscription.product.name }}
+                                            <small class="text-muted">({{ sub_data.subscription.product.code }})</small>
+                                        </h6>
+                                        <div class="subscription-stats">
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Montant forfaitaire:</span>
+                                                <strong class="text-success">{{ sub_data.subscription.fixed_payment_amount|floatformat:2|intcomma }} DA</strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Quantité max:</span>
+                                                <span>{{ sub_data.subscription.max_quantity_allowed|floatformat:2|intcomma }}</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Utilisé (période):</span>
+                                                <span class="{% if sub_data.is_over_limit %}text-danger{% else %}text-warning{% endif %}">
+                                                    {{ sub_data.current_usage|floatformat:2|intcomma }}
+                                                </span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-3">
+                                                <span>Restant:</span>
+                                                <strong class="{% if sub_data.remaining_quantity > 0 %}text-success{% else %}text-danger{% endif %}">
+                                                    {{ sub_data.remaining_quantity|floatformat:2|intcomma }}
+                                                </strong>
+                                            </div>
+                                            
+                                            <!-- Usage Progress Bar -->
+                                            <div class="mb-2">
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <small class="text-muted">Utilisation</small>
+                                                    <small class="text-muted">{{ sub_data.usage_percentage|floatformat:1 }}%</small>
+                                                </div>
+                                                <div class="progress" style="height: 6px;">
+                                                    <div class="progress-bar {% if sub_data.is_over_limit %}bg-danger{% elif sub_data.usage_percentage > 80 %}bg-warning{% else %}bg-success{% endif %}" 
+                                                         style="width: {% if sub_data.is_over_limit %}100{% else %}{{ sub_data.usage_percentage|floatformat:0 }}{% endif %}%"></div>
+                                                </div>
+                                            </div>
+                                            
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar me-1"></i>{{ sub_data.subscription.get_billing_cycle_display }}
+                                                <span class="ms-2">
+                                                    <i class="fas fa-clock me-1"></i>Depuis le {{ sub_data.period_start|date:"d/m/Y" }}
+                                                </span>
+                                            </small>
+
+                                            <!-- Show if this product appears in current invoice -->
+                                            {% if sub_data.invoice_lines %}
+                                            <div class="mt-2 p-2 bg-light rounded">
+                                                <small class="text-success">
+                                                    <i class="fas fa-check-circle me-1"></i>
+                                                    Produit facturé dans cette facture
+                                                    {% for line in sub_data.invoice_lines %}
+                                                    <br><span class="ms-3">Qté: {{ line.quantity|floatformat:2|intcomma }}</span>
+                                                    {% endfor %}
+                                                </small>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Subscription Usage History for this Invoice -->
+                        {% if invoice_related_usage %}
+                        <hr>
+                        <h6 class="mb-3">
+                            <i class="fas fa-history me-2"></i>Utilisation liée à cette facture
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Produit</th>
+                                        <th>Quantité</th>
+                                        <th>Date</th>
+                                        <th>Référence</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for usage in invoice_related_usage %}
+                                    <tr>
+                                        <td>{{ usage.subscription.product.name }}</td>
+                                        <td>{{ usage.quantity_used|floatformat:2|intcomma }}</td>
+                                        <td>{{ usage.usage_date|date:"d/m/Y" }}</td>
+                                        <td>{{ usage.reference }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Invoice Details Card -->
             <div class="card shadow mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-primary">Détails de la facture</h6>
@@ -63,6 +209,9 @@
                                         <a href="{% url 'customers:detail' invoice.customer.pk %}">
                                             {{ invoice.customer.name }}
                                         </a>
+                                        {% if invoice.customer.is_subscriber %}
+                                        <span class="badge bg-info ms-1">Abonné</span>
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 <tr>
@@ -106,6 +255,9 @@
                                     <th>Quantité</th>
                                     <th>Prix unit. HT</th>
                                     <th>Total HT</th>
+                                    {% if invoice.customer.is_subscriber %}
+                                    <th>Abonnement</th>
+                                    {% endif %}
                                 </tr>
                             </thead>
                             <tbody>
@@ -117,6 +269,20 @@
                                     <td>{{ line.quantity }}</td>
                                     <td>{{ line.unit_price|floatformat:2|intcomma }} DA</td>
                                     <td>{{ line.line_total|floatformat:2|intcomma }} DA</td>
+                                    {% if invoice.customer.is_subscriber %}
+                                    <td>
+                                        {% if line.product %}
+                                            {% for sub_data in customer_subscriptions %}
+                                                {% if sub_data.subscription.product == line.product %}
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-crown me-1"></i>Abonné
+                                                    </span>
+                                                    <br><small class="text-muted">Forfait: {{ sub_data.subscription.fixed_payment_amount|floatformat:2|intcomma }} DA</small>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                    </td>
+                                    {% endif %}
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -287,6 +453,35 @@
         
         <!-- Summary and Actions -->
         <div class="col-lg-4">
+            <!-- Subscription Summary (if applicable) -->
+            {% if subscription_summary.has_subscriptions %}
+            <div class="card shadow mb-4 border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-crown me-2"></i>Résumé des abonnements
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Abonnements actifs:</span>
+                        <span class="fw-bold">{{ customer_subscriptions|length }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Montant total:</span>
+                        <span class="fw-bold text-success">{{ subscription_summary.total_subscribed_amount|floatformat:2|intcomma }} DA</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Utilisé (période):</span>
+                        <span class="text-warning">{{ subscription_summary.total_used_this_period|floatformat:2|intcomma }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Quantité restante:</span>
+                        <span class="fw-bold text-primary">{{ subscription_summary.total_remaining_quantity|floatformat:2|intcomma }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Financial Summary -->
             <div class="card shadow mb-4">
                 <div class="card-header">
@@ -398,6 +593,8 @@
                 </div>
             </div>
             {% endif %}
+            
+
             
             <!-- Quick Actions -->
             <div class="card shadow">
