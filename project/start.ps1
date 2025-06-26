@@ -1,0 +1,1 @@
+.\launch.ps1 run
