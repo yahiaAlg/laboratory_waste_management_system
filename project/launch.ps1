@@ -104,6 +104,10 @@ function Initialize-Project {
         Write-Status "Populating cities data..."
         & $PythonCmd $ManagePy populate_cities
     }
+    if (Test-Path "apps\authentication\management\commands\create_superuser.py") {
+        Write-Status "create admin user..."
+        & $PythonCmd $ManagePy create_superuser
+    }
     
     Invoke-CollectStatic
     
