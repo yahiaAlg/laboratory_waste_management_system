@@ -6,8 +6,6 @@ class User(AbstractUser):
         ('admin', 'Administrateur'),
         ('manager', 'Gestionnaire'),
         ('operator', 'Opérateur'),
-        ('accountant', 'Comptable'),
-        ('client', 'Client'),
     ]
     
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='operator')

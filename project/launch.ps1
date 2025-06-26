@@ -95,10 +95,10 @@ function Initialize-Project {
     Invoke-Migrations
     
     # Run custom management commands if they exist
-    if (Test-Path "apps\dashboard\management\commands\populate_db.py") {
-        Write-Status "Populating database with initial data..."
-        & $PythonCmd $ManagePy populate_db
-    }
+    # if (Test-Path "apps\dashboard\management\commands\populate_db.py") {
+    #     Write-Status "Populating database with initial data..."
+    #     & $PythonCmd $ManagePy populate_db
+    # }
     
     if (Test-Path "apps\customers\management\commands\populate_cities.py") {
         Write-Status "Populating cities data..."

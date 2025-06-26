@@ -138,7 +138,6 @@ class ProductSubscription(models.Model):
     def remaining_quantity(self):
         """Calculate remaining quantity for current billing period"""
         from django.utils import timezone
-        from dateutil.relativedelta import relativedelta
         
         # Get current period start date
         today = timezone.now().date()
