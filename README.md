@@ -193,7 +193,8 @@ project/
 │   │   │   └── commands/
 │   │   │       └── populate_cities.py
 │   │   ├── migrations/
-│   │   │   └── 0001_initial.py
+│   │   │   ├── 0001_initial.py
+│   │   │   └── 0002_productsubscription_customer_is_subscriber_and_more.py
 │   │   ├── models.py
 │   │   ├── urls.py
 │   │   └── views.py
@@ -240,12 +241,15 @@ project/
 │       ├── urls.py
 │       └── views.py
 ├── config/
-│   ├── settings.py
 │   ├── resources.py
+│   ├── settings.py
 │   ├── urls.py
 │   └── wsgi.py
 ├── db.sqlite3
 ├── manage.py
+├── media/
+│   └── company/
+│       └── logo_madre.png
 ├── requirements.txt
 ├── static/
 │   ├── css/
@@ -264,7 +268,10 @@ project/
     │   ├── customer_confirm_delete.html
     │   ├── customer_detail.html
     │   ├── customer_form.html
-    │   └── customer_list.html
+    │   ├── customer_list.html
+    │   ├── subscription_detail.html
+    │   ├── subscription_usage_form.html
+    │   └── subscription_usage_list.html
     ├── dashboard/
     │   └── index.html
     ├── inventory/
@@ -298,6 +305,7 @@ project/
         ├── supplier_detail.html
         ├── supplier_form.html
         └── supplier_list.html
+
 ```
 
 ### Bootstrap 5 UI Components Required
@@ -413,3 +421,23 @@ Please generate:
 This system should replicate the professional appearance and functionality of the provided French invoice while adding modern web application capabilities for complete business management.
 
 NOTICE : create me the django files and templates, for this project as per the app requirements description , no typscript, no react , no vue , only django, html, css, js
+
+
+for launching via powershell
+
+```
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+```
+# First-time setup
+.\launch.ps1 setup
+
+# Run development server
+.\launch.ps1 run
+
+# Other commands
+.\launch.ps1 migrate
+.\launch.ps1 shell
+.\launch.ps1 test
+```
