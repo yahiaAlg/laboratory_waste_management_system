@@ -7,22 +7,69 @@ from django.db import models
 from .models import Product, Category, StockMovement
 from .forms import ProductForm, StockMovementForm
 
+# Modify the product_list view to handle advanced filters:
+
 @login_required
 def product_list(request):
     search_query = request.GET.get('search', '')
     category_filter = request.GET.get('category', '')
     
+    # Advanced filters
+    price_min = request.GET.get('price_min', '')
+    price_max = request.GET.get('price_max', '')
+    stock_min = request.GET.get('stock_min', '')
+    stock_max = request.GET.get('stock_max', '')
+    is_service_filter = request.GET.get('is_service', '')
+    is_active_filter = request.GET.get('is_active', '')
+    
     products = Product.objects.select_related('category').all()
     
+    # Text search (name and code)
     if search_query:
         products = products.filter(
             Q(name__icontains=search_query) |
-            Q(code__icontains=search_query) |
-            Q(description__icontains=search_query)
+            Q(code__icontains=search_query)
         )
     
+    # Category filter
     if category_filter:
         products = products.filter(category_id=category_filter)
+    
+    # Price range filter
+    if price_min:
+        try:
+            products = products.filter(unit_price__gte=float(price_min))
+        except ValueError:
+            pass
+    if price_max:
+        try:
+            products = products.filter(unit_price__lte=float(price_max))
+        except ValueError:
+            pass
+    
+    # Stock range filter
+    if stock_min:
+        try:
+            products = products.filter(stock_quantity__gte=float(stock_min))
+        except ValueError:
+            pass
+    if stock_max:
+        try:
+            products = products.filter(stock_quantity__lte=float(stock_max))
+        except ValueError:
+            pass
+    
+    # Service/Product filter
+    if is_service_filter == 'true':
+        products = products.filter(is_service=True)
+    elif is_service_filter == 'false':
+        products = products.filter(is_service=False)
+    
+    # Active status filter
+    if is_active_filter == 'true':
+        products = products.filter(is_active=True)
+    elif is_active_filter == 'false':
+        products = products.filter(is_active=False)
     
     paginator = Paginator(products, 25)
     page_number = request.GET.get('page')
@@ -35,8 +82,45 @@ def product_list(request):
         'search_query': search_query,
         'categories': categories,
         'category_filter': category_filter,
+        # Advanced filter values for preserving form state
+        'price_min': price_min,
+        'price_max': price_max,
+        'stock_min': stock_min,
+        'stock_max': stock_max,
+        'is_service_filter': is_service_filter,
+        'is_active_filter': is_active_filter,
     }
     return render(request, 'inventory/product_list.html', context)
+
+
+# Add this new view for product deletion:
+
+@login_required
+def product_delete(request, pk):
+    # Only allow superusers to delete products
+    if not request.user.is_superuser:
+        messages.error(request, "Vous n'avez pas les permissions pour supprimer des produits.")
+        return redirect('inventory:product_list')
+    
+    product = get_object_or_404(Product, pk=pk)
+    
+    if request.method == 'POST':
+        product_name = product.name
+        
+        # Check if product has stock movements
+        if StockMovement.objects.filter(product=product).exists():
+            messages.warning(request, 
+                f"Le produit '{product_name}' a des mouvements de stock associés. "
+                "Il a été désactivé au lieu d'être supprimé.")
+            product.is_active = False
+            product.save()
+        else:
+            product.delete()
+            messages.success(request, f"Le produit '{product_name}' a été supprimé avec succès.")
+        
+        return redirect('inventory:product_list')
+    
+    return redirect('inventory:product_list')
 
 @login_required
 def product_detail(request, pk):

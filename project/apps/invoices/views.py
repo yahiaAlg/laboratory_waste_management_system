@@ -18,27 +18,61 @@ from apps.customers.models import *
 def invoice_list(request):
     search_query = request.GET.get('search', '')
     status_filter = request.GET.get('status', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    total_min = request.GET.get('total_min', '')
+    total_max = request.GET.get('total_max', '')
     
     invoices = Invoice.objects.select_related('customer').all()
     
+    # Text search
     if search_query:
         invoices = invoices.filter(
             Q(invoice_number__icontains=search_query) |
             Q(customer__name__icontains=search_query)
         )
     
+    # Status filter
     if status_filter:
         invoices = invoices.filter(status=status_filter)
+    
+    # Date range filter
+    if date_from:
+        invoices = invoices.filter(invoice_date__gte=date_from)
+    if date_to:
+        invoices = invoices.filter(invoice_date__lte=date_to)
+    
+    # Total amount range filter
+    if total_min:
+        try:
+            invoices = invoices.filter(total_ttc__gte=Decimal(total_min))
+        except (ValueError, TypeError):
+            pass
+    if total_max:
+        try:
+            invoices = invoices.filter(total_ttc__lte=Decimal(total_max))
+        except (ValueError, TypeError):
+            pass
     
     paginator = Paginator(invoices, 25)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    # Calculate filter summary
+    total_invoices = invoices.count()
+    total_amount = invoices.aggregate(Sum('total_ttc'))['total_ttc__sum'] or Decimal('0')
+    
     context = {
         'page_obj': page_obj,
         'search_query': search_query,
         'status_filter': status_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+        'total_min': total_min,
+        'total_max': total_max,
         'status_choices': Invoice.STATUS_CHOICES,
+        'total_invoices': total_invoices,
+        'total_amount': total_amount,
     }
     return render(request, 'invoices/invoice_list.html', context)
 
@@ -132,6 +166,46 @@ def invoice_update(request, pk):
         'title': 'Modifier la facture'
     }
     return render(request, 'invoices/invoice_form.html', context)
+
+
+@login_required
+def invoice_delete(request, pk):
+    """Delete an invoice - only for admin users"""
+    if request.user.role != 'admin':
+        messages.error(request, 'Seuls les administrateurs peuvent supprimer les factures.')
+        return redirect('invoices:detail', pk=pk)
+    
+    invoice = get_object_or_404(Invoice, pk=pk)
+    
+    # Check if invoice has payments
+    has_payments = Payment.objects.filter(invoice=invoice).exists()
+    
+    if has_payments:
+        messages.error(request, 'Impossible de supprimer une facture avec des paiements enregistrés.')
+        return redirect('invoices:detail', pk=invoice.pk)
+    
+    if request.method == 'POST':
+        invoice_number = invoice.invoice_number
+        customer_name = invoice.customer.name
+        
+        # Delete related subscription usage records
+        if hasattr(invoice.customer, 'subscriptions'):
+            from apps.customers.models import SubscriptionUsage
+            SubscriptionUsage.objects.filter(
+                reference__icontains=invoice.invoice_number
+            ).delete()
+        
+        invoice.delete()
+        
+        messages.success(request, f'Facture {invoice_number} de {customer_name} supprimée avec succès.')
+        return redirect('invoices:list')
+    
+    context = {
+        'invoice': invoice,
+        'has_payments': has_payments,
+        'title': 'Supprimer la facture'
+    }
+    return render(request, 'invoices/invoice_confirm_delete.html', context)
 
 @login_required
 def get_customer_legal_info(request):

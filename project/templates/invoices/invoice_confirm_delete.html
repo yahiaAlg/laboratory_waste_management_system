@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>{{ title }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if has_payments %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Suppression impossible !</strong><br>
+                            Cette facture contient des paiements enregistrés et ne peut pas être supprimée.
+                        </div>
+                        <div class="d-grid">
+                            <a href="{% url 'invoices:detail' invoice.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Retour à la facture
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Attention !</strong> Cette action est irréversible.
+                        </div>
+                        
+                        <div class="mb-3">
+                            <strong>Facture à supprimer :</strong><br>
+                            <div class="mt-2 p-3 bg-light rounded">
+                                <div><strong>Numéro :</strong> {{ invoice.invoice_number }}</div>
+                                <div><strong>Client :</strong> {{ invoice.customer.name }}</div>
+                                <div><strong>Date :</strong> {{ invoice.invoice_date|date:"d/m/Y" }}</div>
+                                <div><strong>Montant :</strong> {{ invoice.total_ttc|floatformat:2 }} DA</div>
+                            </div>
+                        </div>
+                        
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="{% url 'invoices:detail' invoice.pk %}" class="btn btn-secondary">
+                                    <i class="fas fa-times me-2"></i>Annuler
+                                </a>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash me-2"></i>Confirmer la suppression
+                                </button>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

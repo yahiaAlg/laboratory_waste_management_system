@@ -17,8 +17,9 @@
     <div class="card shadow mb-4">
         <div class="card-body">
             <form method="get" class="row g-3">
+                <!-- Basic filters (always visible) -->
                 <div class="col-md-4">
-                    <input type="text" name="search" class="form-control" placeholder="Rechercher..." value="{{ search_query }}">
+                    <input type="text" name="search" class="form-control" placeholder="Rechercher par nom ou code..." value="{{ search_query }}">
                 </div>
                 <div class="col-md-3">
                     <select name="category" class="form-select">
@@ -36,9 +37,59 @@
                     </button>
                 </div>
                 <div class="col-md-3">
-                    <a href="{% url 'inventory:low_stock_report' %}" class="btn btn-outline-warning">
-                        <i class="fas fa-exclamation-triangle me-1"></i>Stock faible
-                    </a>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'inventory:low_stock_report' %}" class="btn btn-outline-warning">
+                            <i class="fas fa-exclamation-triangle me-1"></i>Stock faible
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#advancedFilters">
+                            <i class="fas fa-filter me-1"></i>Avancé
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Advanced filters (collapsible) -->
+                <div class="collapse mt-3" id="advancedFilters">
+                    <div class="border-top pt-3">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted">Prix unitaire (DA)</label>
+                                <div class="d-flex gap-2">
+                                    <input type="number" name="price_min" class="form-control form-control-sm" placeholder="Min" value="{{ price_min }}" step="0.01">
+                                    <input type="number" name="price_max" class="form-control form-control-sm" placeholder="Max" value="{{ price_max }}" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted">Quantité en stock</label>
+                                <div class="d-flex gap-2">
+                                    <input type="number" name="stock_min" class="form-control form-control-sm" placeholder="Min" value="{{ stock_min }}" step="0.01">
+                                    <input type="number" name="stock_max" class="form-control form-control-sm" placeholder="Max" value="{{ stock_max }}" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small text-muted">Type</label>
+                                <select name="is_service" class="form-select form-select-sm">
+                                    <option value="">Tous</option>
+                                    <option value="true" {% if is_service_filter == 'true' %}selected{% endif %}>Services</option>
+                                    <option value="false" {% if is_service_filter == 'false' %}selected{% endif %}>Produits</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small text-muted">Statut</label>
+                                <select name="is_active" class="form-select form-select-sm">
+                                    <option value="">Tous</option>
+                                    <option value="true" {% if is_active_filter == 'true' %}selected{% endif %}>Actifs</option>
+                                    <option value="false" {% if is_active_filter == 'false' %}selected{% endif %}>Inactifs</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small text-muted">&nbsp;</label>
+                                <div class="d-flex gap-1">
+                                    <button type="submit" class="btn btn-primary btn-sm flex-fill">Appliquer</button>
+                                    <a href="{% url 'inventory:product_list' %}" class="btn btn-outline-secondary btn-sm">Reset</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>
@@ -101,6 +152,12 @@
                                             <i class="fas fa-exchange-alt"></i>
                                         </a>
                                         {% endif %}
+                                        {% if user.is_superuser %}
+                                        <button type="button" class="btn btn-outline-danger" title="Supprimer" 
+                                                onclick="confirmDelete('{{ product.name }}', '{% url 'inventory:product_delete' product.pk %}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>
@@ -150,4 +207,29 @@
         </div>
     </div>
 </div>
+<!-- Add hidden CSRF token form (place anywhere in template) -->
+<form style="display: none;">
+    {% csrf_token %}
+</form>
+<script>
+    function confirmDelete(productName, deleteUrl) {
+        if (confirm(`Êtes-vous sûr de vouloir supprimer le produit "${productName}" ?\n\nCette action est irréversible.`)) {
+            // Create a form for DELETE request
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = deleteUrl;
+            
+            // Add CSRF token from existing hidden form
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+</script>
 {% endblock %}

@@ -11,4 +11,5 @@ urlpatterns = [
     path('stock-movement/create/', views.stock_movement_create, name='stock_movement_create'),
     path('stock-movement/create/<int:product_pk>/', views.stock_movement_create, name='stock_movement_create_for_product'),
     path('reports/low-stock/', views.low_stock_report, name='low_stock_report'),
+    path('product/<int:pk>/delete/', views.product_delete, name='product_delete'),
 ]
