@@ -20,6 +20,7 @@ urlpatterns = [
     
     # API URLs
     path('api/customer-subscriptions/', views.get_customer_subscriptions, name='api_customer_subscriptions'),
+    path('api/customer-legal-info/', views.get_customer_legal_info, name='get_customer_legal_info'),
 
     path('api/product-data/', views.get_product_data, name='product_data'),
 ]

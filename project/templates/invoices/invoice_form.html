@@ -200,7 +200,7 @@
                             <span id="discount-display">0.00 DA</span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
-                            <span id="tva-label">T.V.A. (19%):</span>
+                            <span id="tva-label">T.V.A:</span>
                             <span id="tva-display">0.00 DA</span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
@@ -283,12 +283,13 @@
 }
 </style>
 
-<input type="hidden" name="tva_rate" value="{{ company.tva_rate|default:19 }}">
+<input type="hidden" name="tva_rate" value="{{ company.tva_rate|default:0 }}">
 
 {% endblock %}
 
 {% block extra_js %}
 <script>
+// Get company data from Django context
 // Get company data from Django context
 const tvaRateInput = document.querySelector('input[name="tva_rate"]');
 const tvaRateValue = tvaRateInput ? parseFloat(tvaRateInput.value) : 19;
@@ -303,6 +304,7 @@ const TVA_RATE = COMPANY_DATA.tva_rate / 100;
 let lineIndex = {{ formset.total_form_count }};
 let customerSubscriptions = {};
 let currentCustomerId = null;
+let currentCustomerHasLegalInfo = false; // Track customer legal info status
 
 // Customer selection change handler
 document.addEventListener('change', function(e) {
@@ -312,12 +314,47 @@ document.addEventListener('change', function(e) {
         
         if (customerId) {
             loadCustomerSubscriptions(customerId);
+            checkCustomerLegalInfo(customerId);
         } else {
             hideSubscriptionInfo();
             customerSubscriptions = {};
+            currentCustomerHasLegalInfo = false;
+            calculateTotals(); // Recalculate with updated TVA
         }
     }
 });
+
+// Check if customer has legal information
+function checkCustomerLegalInfo(customerId) {
+    fetch(`/customers/api/customer-legal-info/?customer_id=${customerId}`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        currentCustomerHasLegalInfo = data.has_legal_info || false;
+        
+        // Update TVA label based on legal info status
+        const tvaLabel = document.getElementById('tva-label');
+        if (tvaLabel) {
+            if (currentCustomerHasLegalInfo) {
+                tvaLabel.textContent = `T.V.A. (${COMPANY_DATA.tva_rate}%):`;
+            } else {
+                tvaLabel.textContent = `T.V.A. (0%):`;
+            }
+        }
+        
+        calculateTotals(); // Recalculate with updated TVA
+    })
+    .catch(error => {
+        console.error('Error checking customer legal info:', error);
+        currentCustomerHasLegalInfo = false;
+        calculateTotals();
+    });
+}
 
 // Load customer subscriptions
 function loadCustomerSubscriptions(customerId) {
@@ -649,7 +686,7 @@ function addLineEventListeners(row) {
     }
 }
 
-// Calculate invoice totals
+// Calculate invoice totals - UPDATED with legal info check
 function calculateTotals() {
     let subtotal = 0;
     
@@ -667,8 +704,10 @@ function calculateTotals() {
     const otherTaxes = otherTaxesInput ? (parseFloat(otherTaxesInput.value) || 0) : 0;
     
     const discountedSubtotal = Math.max(0, subtotal - discount);
-    const tvaRate = isNaN(TVA_RATE) ? 0.19 : TVA_RATE;
-    const tva = discountedSubtotal * tvaRate;
+    
+    // Apply TVA only if customer has legal information
+    const effectiveTvaRate = currentCustomerHasLegalInfo ? TVA_RATE : 0;
+    const tva = discountedSubtotal * effectiveTvaRate;
     const total = discountedSubtotal + tva + timbre + otherTaxes;
     
     // Update display elements
@@ -712,6 +751,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (customerSelect && customerSelect.value) {
         currentCustomerId = customerSelect.value;
         loadCustomerSubscriptions(customerSelect.value);
+        checkCustomerLegalInfo(customerSelect.value);
     }
     
     // Initial calculation

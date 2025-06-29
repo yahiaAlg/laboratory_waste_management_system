@@ -93,14 +93,25 @@ class Invoice(models.Model):
         else:
             discounted_subtotal = self.subtotal_ht
         
-        # Calculate TVA
-        company = Company.objects.first()
-        tva_rate = company.tva_rate if company else Decimal('19.00')
-        self.tva_amount = discounted_subtotal * (tva_rate / 100)
+        # Check if customer has legal information for TVA calculation
+        customer_has_legal_info = bool(
+            self.customer.nis or 
+            self.customer.rc or 
+            self.customer.art or
+            self.customer.nif
+        )
+        
+        # Calculate TVA only if customer has legal information
+        if customer_has_legal_info:
+            company = Company.objects.first()
+            tva_rate = company.tva_rate if company else Decimal('19.00')
+            self.tva_amount = discounted_subtotal * (tva_rate / 100)
+        else:
+            self.tva_amount = Decimal('0.00')
         
         # Calculate total
         self.total_ttc = discounted_subtotal + self.tva_amount + self.timbre_fiscal + self.other_taxes
-        
+
     @property
     def is_overdue(self):
         from django.utils import timezone

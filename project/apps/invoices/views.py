@@ -134,6 +134,41 @@ def invoice_update(request, pk):
     return render(request, 'invoices/invoice_form.html', context)
 
 @login_required
+def get_customer_legal_info(request):
+    """AJAX view to check if customer has legal information"""
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    customer_id = request.GET.get('customer_id')
+    
+    if not customer_id:
+        return JsonResponse({'has_legal_info': False})
+    
+    try:
+        customer_id = int(customer_id)
+        customer = Customer.objects.get(pk=customer_id)
+        
+        # Check if customer has required legal information
+        has_legal_info = bool(
+            customer.nis or 
+            customer.rc or 
+            customer.art or
+            customer.nif
+        )
+        
+        return JsonResponse({
+            'has_legal_info': has_legal_info,
+            'customer_id': customer.id,
+            'customer_name': customer.name
+        })
+        
+    except (ValueError, Customer.DoesNotExist):
+        return JsonResponse({'has_legal_info': False})
+    except Exception as e:
+        return JsonResponse({'error': 'Server error occurred'}, status=500)
+
+
+@login_required
 def get_customer_subscriptions(request):
     """AJAX view to get customer's active subscriptions"""
     if request.method != 'GET':

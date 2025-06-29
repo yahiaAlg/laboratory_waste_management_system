@@ -159,7 +159,7 @@
     <button onclick="window.print()" class="print-button no-print" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
         Imprimer
     </button>
-    <button onclick="window.location.href='mailto:';" class="email-button no-print" style="padding: 10px 20px; background:rgb(0, 255, 238); color: white; border: none; border-radius: 5px; cursor: pointer;">
+    <button onclick="window.location.href='mailto:{% if invoice.customer.email %}{{invoice.customer.email}}{% endif %}';" class="email-button no-print" style="padding: 10px 20px; background:rgb(0, 255, 238); color: white; border: none; border-radius: 5px; cursor: pointer;">
         Email
     </button>
     
@@ -200,22 +200,29 @@
     </div>
     
     <!-- Client Section -->
-    <div class="client-section">
-        <div class="client-info">
-            <strong>Client</strong><br>
-            <strong>{{ invoice.customer.name }}</strong><br><br>
-            <strong>Adresse :</strong> {{ invoice.customer.full_address }}<br><br>
-            <strong>Activité :</strong> {{ invoice.customer.activity|default:"PHARMACIE" }}<br><br>
-            <strong>NIS :</strong> {{ invoice.customer.nis|default:"298910380108134" }} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            <strong>RC :</strong> {{ invoice.customer.rc|default:"14A2867534-00/28" }}<br>
-            <strong>NIF :</strong> {{ invoice.customer.nif|default:"289103801081114" }} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            <strong>ART :</strong> {{ invoice.customer.art|default:"28160764911" }}
+     {% comment %} if there is legal info then show this section {% endcomment %}
+    {% if invoice.customer.nis and invoice.customer.rc and invoice.customer.nif and invoice.customer.art  %}    
+        <div class="client-section">
+            <div class="client-info">
+                <strong>Client</strong><br>
+                <strong>{{ invoice.customer.name }}</strong><br><br>
+                <strong>Adresse :</strong> {{ invoice.customer.full_address }}<br><br>
+                <strong>Activité :</strong> {{ invoice.customer.activity }}<br><br>
+                <strong>NIS :</strong> {{ invoice.customer.nis}} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                <strong>RC :</strong> {{ invoice.customer.rc }}<br>
+                <strong>NIF :</strong> {{ invoice.customer.nif }} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                <strong>ART :</strong> {{ invoice.customer.art }}
+            </div>
         </div>
-    </div>
+    {% endif %}
     
     <!-- Invoice Title -->
-    <div class="invoice-title">F A C T U R E</div>
-    
+    {% if invoice.customer.nis and invoice.customer.rc and invoice.customer.nif and invoice.customer.art  %}    
+        <div class="invoice-title">F A C T U R E</div>
+    {% else %}
+        <div class="invoice-title">BON DE COLLECTE</div>
+    {% endif %}
+
     <!-- Invoice Details -->
     <div class="invoice-details">
         <div>

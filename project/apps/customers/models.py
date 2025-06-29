@@ -1,9 +1,8 @@
 from django.db import models
 from django.core.validators import RegexValidator
 from apps.inventory.models import Product
-class City(models.Model):
 
-    
+class City(models.Model):
     name = models.CharField(max_length=50)
     code = models.CharField(max_length=10, validators=[RegexValidator(regex='^(\d{3}-\d{4})$')])
 
@@ -30,9 +29,9 @@ class Customer(models.Model):
     city = models.CharField(max_length=100, verbose_name="Ville")
     
     postal_code = models.CharField(max_length=10, verbose_name="Code postal")
-    state = models.ForeignKey(City, on_delete=models.CASCADE , verbose_name="Wilaya", related_name='customers')
+    state = models.ForeignKey(City, on_delete=models.CASCADE, null=True, blank=True, verbose_name="Wilaya", related_name='customers')
     
-    # Contact information
+    # Contact information - made optional
     phone = models.CharField(max_length=20, blank=True, verbose_name="Téléphone")
     fax = models.CharField(max_length=20, blank=True, verbose_name="Fax")
     email = models.EmailField(blank=True, verbose_name="Email")
@@ -40,7 +39,7 @@ class Customer(models.Model):
     # Business information
     activity = models.CharField(max_length=200, blank=True, verbose_name="Activité")
     
-    # Legal identifiers
+    # Legal identifiers - made optional
     nis = models.CharField(max_length=20, blank=True, verbose_name="NIS")
     rc = models.CharField(max_length=20, blank=True, verbose_name="RC")
     art = models.CharField(max_length=20, blank=True, verbose_name="ART")
@@ -53,7 +52,7 @@ class Customer(models.Model):
     
     # Subscription settings
     is_subscriber = models.BooleanField(default=False, verbose_name="Abonné avec offres")
-    # Add this method to your existing Customer model:
+    
     def has_active_subscriptions(self):
         """Check if customer has any active subscriptions"""
         return self.subscriptions.filter(is_active=True).exists()
@@ -65,7 +64,6 @@ class Customer(models.Model):
             total=Sum('fixed_payment_amount')
         )['total'] or 0
 
-   
     # Status
     is_active = models.BooleanField(default=True, verbose_name="Actif")
     
@@ -88,15 +86,13 @@ class Customer(models.Model):
             address_parts.append(self.address_line2)
         address_parts.append(f"{self.postal_code} {self.city}")
         return ", ".join(address_parts)
-    
-    
-# Add this to your models.py (customer app)
+
 
 class ProductSubscription(models.Model):
     """Represents a customer's subscription to a specific product with fixed payment"""
     
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, verbose_name="Client", related_name='subscriptions')
-    product = models.ForeignKey(Product , on_delete=models.CASCADE, verbose_name="Produit")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Produit")
     fixed_payment_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant forfaitaire")
     max_quantity_allowed = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Quantité maximale autorisée")
     
@@ -128,11 +124,16 @@ class ProductSubscription(models.Model):
     
     def clean(self):
         from django.core.exceptions import ValidationError
-        # Validate that max_quantity doesn't exceed available stock for physical products
-        if not self.product.is_service and self.max_quantity_allowed > self.product.stock_quantity:
-            raise ValidationError(
-                f"La quantité maximale ({self.max_quantity_allowed}) ne peut pas dépasser le stock disponible ({self.product.stock_quantity})"
-            )
+        
+        # Only validate if product is set and has required attributes
+        if self.product_id and self.product:
+            # Check if product has is_service attribute and stock_quantity
+            if hasattr(self.product, 'is_service') and hasattr(self.product, 'stock_quantity'):
+                # Validate that max_quantity doesn't exceed available stock for physical products
+                if not self.product.is_service and self.max_quantity_allowed > self.product.stock_quantity:
+                    raise ValidationError(
+                        f"La quantité maximale ({self.max_quantity_allowed}) ne peut pas dépasser le stock disponible ({self.product.stock_quantity})"
+                    )
     
     @property
     def remaining_quantity(self):
@@ -189,6 +190,3 @@ class SubscriptionUsage(models.Model):
             raise ValidationError(
                 f"La quantité utilisée ({self.quantity_used}) dépasse la quantité restante ({remaining})"
             )
-
-
-

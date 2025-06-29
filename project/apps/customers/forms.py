@@ -2,6 +2,7 @@ from django import forms
 from django.forms import inlineformset_factory
 from .models import Customer, ProductSubscription, SubscriptionUsage
 from apps.inventory.models import Product
+
 class CustomerForm(forms.ModelForm):
     class Meta:
         model = Customer
@@ -54,8 +55,18 @@ class ProductSubscriptionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Only show active products
-        
         self.fields['product'].queryset = Product.objects.filter(is_active=True)
+        
+        # Make product field required only if subscription data is provided
+        if not any([
+            self.data.get(f'{self.prefix}-product') if self.prefix else self.data.get('product'),
+            self.data.get(f'{self.prefix}-fixed_payment_amount') if self.prefix else self.data.get('fixed_payment_amount'),
+            self.data.get(f'{self.prefix}-max_quantity_allowed') if self.prefix else self.data.get('max_quantity_allowed')
+        ]):
+            self.fields['product'].required = False
+            self.fields['fixed_payment_amount'].required = False
+            self.fields['max_quantity_allowed'].required = False
+            self.fields['start_date'].required = False
 
 class SubscriptionUsageForm(forms.ModelForm):
     class Meta:
