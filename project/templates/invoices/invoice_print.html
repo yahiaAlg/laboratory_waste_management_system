@@ -201,20 +201,20 @@
     
     <!-- Client Section -->
      {% comment %} if there is legal info then show this section {% endcomment %}
-    {% if invoice.customer.nis and invoice.customer.rc and invoice.customer.nif and invoice.customer.art  %}    
-        <div class="client-section">
-            <div class="client-info">
-                <strong>Client</strong><br>
-                <strong>{{ invoice.customer.name }}</strong><br><br>
-                <strong>Adresse :</strong> {{ invoice.customer.full_address }}<br><br>
-                <strong>Activité :</strong> {{ invoice.customer.activity }}<br><br>
+     <div class="client-section">
+         <div class="client-info">
+             <strong>Client</strong><br>
+             <strong>{{ invoice.customer.name }}</strong><br><br>
+             <strong>Adresse :</strong> {{ invoice.customer.full_address }}<br><br>
+             <strong>Activité :</strong> {{ invoice.customer.activity }}<br><br>
+             {% if invoice.customer.nis and invoice.customer.rc and invoice.customer.nif and invoice.customer.art  %}    
                 <strong>NIS :</strong> {{ invoice.customer.nis}} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                 <strong>RC :</strong> {{ invoice.customer.rc }}<br>
                 <strong>NIF :</strong> {{ invoice.customer.nif }} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                 <strong>ART :</strong> {{ invoice.customer.art }}
+            {% endif %}
             </div>
         </div>
-    {% endif %}
     
     <!-- Invoice Title -->
     {% if invoice.customer.nis and invoice.customer.rc and invoice.customer.nif and invoice.customer.art  %}    
