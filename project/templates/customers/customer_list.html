@@ -282,6 +282,9 @@
                                            data-confirm-delete="Êtes-vous sûr de vouloir supprimer ce client ?">
                                             <i class="fas fa-trash"></i>
                                         </a>
+                                        <a href="{% url 'invoices:create' %}?customer={{customer.pk}}" class="btn btn-outline-success" title="facturer" >
+                                            <i class="fas fa-file-invoice"></i>
+                                        </a>
                                     </div>
                                 </td>
                             </tr>

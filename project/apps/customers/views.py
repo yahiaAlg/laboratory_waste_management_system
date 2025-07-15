@@ -7,6 +7,8 @@ from django.http import JsonResponse
 from django.forms import ValidationError
 from .models import Customer, ProductSubscription
 from .forms import CustomerForm, ProductSubscriptionFormSet, SubscriptionUsageForm
+# Calculate usage statistics
+from django.utils import timezone
 
 @login_required
 def customer_list(request):
@@ -278,10 +280,7 @@ def subscription_detail(request, pk):
     subscription = get_object_or_404(ProductSubscription, pk=pk)
     recent_usage = subscription.usages.order_by('-usage_date')[:10]
     
-    # Calculate usage statistics
-    from django.utils import timezone
-    from dateutil.relativedelta import relativedelta
-    
+
     today = timezone.now().date()
     if subscription.billing_cycle == 'monthly':
         period_start = today.replace(day=1)

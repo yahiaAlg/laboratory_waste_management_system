@@ -150,7 +150,11 @@
                                         <td>{{ invoice.customer.name|truncatechars:20 }}</td>
                                         <td>{{ invoice.total_ttc|floatformat:2 }} DA</td>
                                         <td>
-                                            <span class="badge badge-{{ invoice.status }}">{{ invoice.get_status_display }}</span>
+                                            <span class="
+                                            badge
+                                            bg-{% if invoice.status == 'paid' %}success{% elif invoice.status == 'sent' %}warning{% else %}danger{% endif %}
+                                            
+                                            ">{{ invoice.get_status_display }}</span>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -226,14 +230,21 @@
 {% block extra_js %}
 <script>
 // Revenue Chart
+// Revenue Chart
 const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+const revenueData = [{% for item in monthly_revenue %}{{ item.revenue|floatformat:0 }}{% if not forloop.last %},{% endif %}{% endfor %}];
+const revenueLabels = [{% for item in monthly_revenue %}'{{ item.month }}'{% if not forloop.last %},{% endif %}{% endfor %}];
+
+{% comment %} console.log('Revenue data:', revenueData);
+console.log('Revenue labels:', revenueLabels);
+console.log('Monthly revenue array:', {{ monthly_revenue|safe }}); {% endcomment %}
 const revenueChart = new Chart(revenueCtx, {
     type: 'line',
     data: {
-        labels: [{% for item in monthly_revenue %}'{{ item.month }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+        labels: revenueLabels,
         datasets: [{
             label: 'Chiffre d\'affaires (DA)',
-            data: [{% for item in monthly_revenue %}{{ item.revenue }}{% if not forloop.last %},{% endif %}{% endfor %}],
+            data: revenueData,
             borderColor: 'rgb(54, 162, 235)',
             backgroundColor: 'rgba(54, 162, 235, 0.1)',
             tension: 0.1,
@@ -263,12 +274,18 @@ const revenueChart = new Chart(revenueCtx, {
 
 // Status Distribution Chart
 const statusCtx = document.getElementById('statusChart').getContext('2d');
+const statusData = [{% for item in status_distribution %}{{ item.count }}{% if not forloop.last %},{% endif %}{% endfor %}];
+const statusLabels = [{% for item in status_distribution %}'{{ item.status }}'{% if not forloop.last %},{% endif %}{% endfor %}];
+
+console.log('Status data:', statusData);
+console.log('Status labels:', statusLabels);
+
 const statusChart = new Chart(statusCtx, {
     type: 'doughnut',
     data: {
-        labels: [{% for item in status_distribution %}'{{ item.status }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+        labels: statusLabels,
         datasets: [{
-            data: [{% for item in status_distribution %}{{ item.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+            data: statusData,
             backgroundColor: [
                 '#4e73df',
                 '#1cc88a',

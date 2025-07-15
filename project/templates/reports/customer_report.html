@@ -13,6 +13,168 @@
         </a>
     </div>
     
+    <!-- Dashboard Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Clients
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalClients">
+                                {{ customers.count }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                CA Total
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalRevenue">
+                                {% regroup customers by total_revenue as revenue_groups %}
+                                {% for group in revenue_groups %}
+                                    {% if forloop.last %}
+                                        {{ group.grouper|default:0|floatformat:2|intcomma }} DA
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Clients Actifs
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="activeClients">
+                                {% for customer in customers %}
+                                    {% if customer.is_active %}{{ forloop.counter }}{% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Créances Totales
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalOutstanding">
+                                {% regroup customers by outstanding_balance as outstanding_groups %}
+                                {% for group in outstanding_groups %}
+                                    {% if forloop.last %}
+                                        {{ group.grouper|default:0|floatformat:2|intcomma }} DA
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="row mb-4">
+        <!-- Revenue by Customer Type Chart -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Répartition par Type de Client</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="customerTypeChart" width="100"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top Customers by Revenue Chart -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Top 10 Clients par CA</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="topCustomersChart" width="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Invoice Count Distribution -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Distribution des Factures</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="invoiceDistributionChart" width="100"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Outstanding Balance Chart -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Créances par Client</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="outstandingChart" width="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- City Distribution Chart -->
+    <div class="row mb-4">
+        <div class="col-xl-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Répartition Géographique des Clients</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="cityDistributionChart" width="100" height="40"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Customers Table -->
     <div class="card shadow">
         <div class="card-header">
@@ -71,4 +233,295 @@
         </div>
     </div>
 </div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+<script>
+// Prepare data from Django template
+const customersData = [
+    {% for customer in customers %}
+    {
+        name: "{{ customer.name|escapejs }}",
+        type: "{{ customer.customer_type }}",
+        city: "{{ customer.city|escapejs }}",
+        revenue: {{ customer.total_revenue|default:0|floatformat:0 }},
+        invoiceCount: {{ customer.invoice_count|default:0|floatformat:0 }},
+        outstanding: {{ customer.outstanding_balance|default:0|floatformat:0 }},
+        isActive: {{ customer.is_active|yesno:"true,false" }}
+    },
+    {% endfor %}
+];
+
+// Chart colors
+const colors = {
+    primary: '#4e73df',
+    success: '#1cc88a',
+    info: '#36b9cc',
+    warning: '#f6c23e',
+    danger: '#e74a3b',
+    secondary: '#858796',
+    light: '#f8f9fc',
+    dark: '#5a5c69'
+};
+
+// 1. Customer Type Distribution (Pie Chart)
+const customerTypeData = customersData.reduce((acc, customer) => {
+    acc[customer.type] = (acc[customer.type] || 0) + 1;
+    return acc;
+}, {});
+
+const customerTypeChart = new Chart(document.getElementById('customerTypeChart'), {
+    type: 'doughnut',
+    data: {
+        labels: Object.keys(customerTypeData).map(type => type === 'company' ? 'Entreprise' : 'Particulier'),
+        datasets: [{
+            data: Object.values(customerTypeData),
+            backgroundColor: [colors.primary, colors.success],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// 2. Top Customers by Revenue (Bar Chart)
+const topCustomers = customersData
+    .filter(customer => customer.revenue > 0)
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 10);
+
+const topCustomersChart = new Chart(document.getElementById('topCustomersChart'), {
+    type: 'bar',
+    data: {
+        labels: topCustomers.map(customer => customer.name.length > 15 ? customer.name.substring(0, 15) + '...' : customer.name),
+        datasets: [{
+            label: 'CA (DA)',
+            data: topCustomers.map(customer => customer.revenue),
+            backgroundColor: colors.primary,
+            borderColor: colors.primary,
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return new Intl.NumberFormat('fr-FR').format(value) + ' DA';
+                    }
+                }
+            },
+            x: {
+                ticks: {
+                    maxRotation: 45
+                }
+            }
+        }
+    }
+});
+
+// 3. Invoice Count Distribution (Histogram)
+const invoiceRanges = {
+    '0': 0,
+    '1-5': 0,
+    '6-10': 0,
+    '11-20': 0,
+    '21+': 0
+};
+
+customersData.forEach(customer => {
+    const count = customer.invoiceCount;
+    if (count === 0) invoiceRanges['0']++;
+    else if (count <= 5) invoiceRanges['1-5']++;
+    else if (count <= 10) invoiceRanges['6-10']++;
+    else if (count <= 20) invoiceRanges['11-20']++;
+    else invoiceRanges['21+']++;
+});
+
+const invoiceDistributionChart = new Chart(document.getElementById('invoiceDistributionChart'), {
+    type: 'bar',
+    data: {
+        labels: Object.keys(invoiceRanges),
+        datasets: [{
+            label: 'Nombre de clients',
+            data: Object.values(invoiceRanges),
+            backgroundColor: colors.info,
+            borderColor: colors.info,
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+
+// 4. Outstanding Balance (Horizontal Bar Chart)
+const outstandingCustomers = customersData
+    .filter(customer => customer.outstanding > 0)
+    .sort((a, b) => b.outstanding - a.outstanding)
+    .slice(0, 10);
+
+const outstandingChart = new Chart(document.getElementById('outstandingChart'), {
+    type: 'bar',
+    data: {
+        labels: outstandingCustomers.map(customer => customer.name.length > 15 ? customer.name.substring(0, 15) + '...' : customer.name),
+        datasets: [{
+            label: 'Créances (DA)',
+            data: outstandingCustomers.map(customer => customer.outstanding),
+            backgroundColor: colors.danger,
+            borderColor: colors.danger,
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            x: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return new Intl.NumberFormat('fr-FR').format(value) + ' DA';
+                    }
+                }
+            }
+        }
+    }
+});
+
+// 5. City Distribution (Horizontal Bar Chart)
+const cityData = customersData.reduce((acc, customer) => {
+    acc[customer.city] = (acc[customer.city] || 0) + 1;
+    return acc;
+}, {});
+
+const sortedCities = Object.entries(cityData)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 15); // Top 15 cities
+
+const cityDistributionChart = new Chart(document.getElementById('cityDistributionChart'), {
+    type: 'bar',
+    data: {
+        labels: sortedCities.map(([city, count]) => city),
+        datasets: [{
+            label: 'Nombre de clients',
+            data: sortedCities.map(([city, count]) => count),
+            backgroundColor: colors.success,
+            borderColor: colors.success,
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            x: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+
+// Resize charts when window is resized
+window.addEventListener('resize', function() {
+    customerTypeChart.resize();
+    topCustomersChart.resize();
+    invoiceDistributionChart.resize();
+    outstandingChart.resize();
+    cityDistributionChart.resize();
+});
+</script>
+
+<style>
+.status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.status-indicator.active {
+    background-color: #1cc88a;
+}
+
+.status-indicator.inactive {
+    background-color: #858796;
+}
+
+.card {
+    border: none;
+    border-radius: 0.35rem;
+}
+
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+
+.text-xs {
+    font-size: 0.7rem;
+}
+
+canvas {
+    min-height: 350px !important;
+}
+</style>
 {% endblock %}

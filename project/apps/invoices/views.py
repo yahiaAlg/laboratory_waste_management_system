@@ -82,6 +82,22 @@ def invoice_create(request):
     company = Company.objects.first()
     products = Product.objects.filter(is_active=True).order_by('code', 'name')
     
+    # Get customer ID from GET parameter
+    customer_id = request.GET.get('customer', None)
+    initial_data = {
+        'invoice_date': timezone.now().date(),
+        'due_date': timezone.now().date() + timezone.timedelta(days=30)
+    }
+    
+    # Pre-populate customer if provided
+    if customer_id:
+        try:
+            customer = Customer.objects.get(pk=customer_id)
+            initial_data['customer'] = customer
+        except (Customer.DoesNotExist, ValueError):
+            # If customer doesn't exist or invalid ID, show error message
+            messages.warning(request, 'Client spécifié non trouvé.')
+    
     if request.method == 'POST':
         form = InvoiceForm(request.POST)
         formset = InvoiceLineFormSet(request.POST)
@@ -118,10 +134,7 @@ def invoice_create(request):
             messages.success(request, f'Facture {invoice.invoice_number} créée avec succès.')
             return redirect('invoices:detail', pk=invoice.pk)
     else:
-        form = InvoiceForm(initial={
-            'invoice_date': timezone.now().date(),
-            'due_date': timezone.now().date() + timezone.timedelta(days=30)
-        })
+        form = InvoiceForm(initial=initial_data)
         formset = InvoiceLineFormSet()
     
     context = {

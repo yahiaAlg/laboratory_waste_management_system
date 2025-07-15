@@ -4,6 +4,44 @@
 {% block title %}Rapport financier{% endblock %}
 
 {% block content %}
+<style>
+.card-body canvas {
+    min-height: 300px !important;
+}
+
+/* Specific heights for each chart type */
+#revenueChart {
+    min-height: 350px !important;
+}
+
+#distributionChart {
+    min-height: 280px !important;
+}
+
+#cashFlowChart {
+    min-height: 300px !important;
+}
+
+#paymentMethodsChart {
+    min-height: 280px !important;
+}
+
+#monthlyTrendsChart {
+    min-height: 250px !important;
+}
+
+/* Improve card spacing */
+.card {
+    margin-bottom: 2rem;
+}
+
+/* Better responsive behavior */
+@media (max-width: 768px) {
+    .card-body canvas {
+        min-height: 250px !important;
+    }
+}
+</style>
 <div class="container">
     <!-- Page Header -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -120,6 +158,84 @@
         </div>
     </div>
     
+    <!-- Charts Section -->
+    <div class="row">
+        <!-- Revenue Overview Chart -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-line me-2"></i>Évolution des revenus
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart" ></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Financial Distribution Pie Chart -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-pie me-2"></i>Répartition financière
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="distributionChart" ></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Additional Charts Row -->
+    <div class="row">
+        <!-- Cash Flow Chart -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-bar me-2"></i>Flux de trésorerie
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="cashFlowChart" ></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Payment Methods Chart -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-doughnut me-2"></i>Modes de paiement
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="paymentMethodsChart" ></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Monthly Trends Chart -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-area me-2"></i>Tendances mensuelles
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyTrendsChart" ></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <div class="row">
         <!-- Period Invoices -->
         <div class="col-lg-6">
@@ -216,4 +332,231 @@
         </div>
     </div>
 </div>
+
+<!-- Chart.js Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+<script>
+// Chart.js Configuration
+Chart.defaults.font.family = 'Nunito', '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
+Chart.defaults.color = '#858796';
+
+// Sample data - in real implementation, pass this from Django context
+const financialData = {
+    totalInvoiced: {{ total_invoiced|default:0|floatformat:0 }},
+    totalCollected: {{ total_collected|default:0|floatformat:0 }},
+    totalOutstanding: {{ total_outstanding|default:0|floatformat:0 }},
+    totalTva: {{ total_tva|default:0|floatformat:0 }},
+    // Sample monthly data - replace with actual data from Django
+    monthlyRevenue: [120000, 150000, 180000, 165000, 200000, 175000],
+    monthlyPayments: [100000, 140000, 160000, 150000, 180000, 190000],
+    monthlyLabels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun'],
+    paymentMethods: {
+        'Chèque': 45,
+        'Virement': 35,
+        'Espèces': 15,
+        'Carte': 5
+    }
+};
+
+// 1. Revenue Overview Chart
+const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+new Chart(revenueCtx, {
+    type: 'line',
+    data: {
+        labels: financialData.monthlyLabels,
+        datasets: [{
+            label: 'Facturé',
+            data: financialData.monthlyRevenue,
+            borderColor: '#4e73df',
+            backgroundColor: 'rgba(78, 115, 223, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.3
+        }, {
+            label: 'Encaissé',
+            data: financialData.monthlyPayments,
+            borderColor: '#1cc88a',
+            backgroundColor: 'rgba(28, 200, 138, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value.toLocaleString() + ' DA';
+                    }
+                }
+            }
+        }
+    }
+});
+
+// 2. Financial Distribution Pie Chart
+const distributionCtx = document.getElementById('distributionChart').getContext('2d');
+new Chart(distributionCtx, {
+    type: 'pie',
+    data: {
+        labels: ['Encaissé', 'Créances', 'TVA'],
+        datasets: [{
+            data: [
+                financialData.totalCollected,
+                financialData.totalOutstanding,
+                financialData.totalTva
+            ],
+            backgroundColor: [
+                '#1cc88a',
+                '#f6c23e',
+                '#36b9cc'
+            ],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 20
+                }
+            }
+        }
+    }
+});
+
+// 3. Cash Flow Chart
+const cashFlowCtx = document.getElementById('cashFlowChart').getContext('2d');
+new Chart(cashFlowCtx, {
+    type: 'bar',
+    data: {
+        labels: financialData.monthlyLabels,
+        datasets: [{
+            label: 'Entrées',
+            data: financialData.monthlyPayments,
+            backgroundColor: '#1cc88a',
+            borderColor: '#1cc88a',
+            borderWidth: 1
+        }, {
+            label: 'Facturé',
+            data: financialData.monthlyRevenue,
+            backgroundColor: '#4e73df',
+            borderColor: '#4e73df',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value.toLocaleString() + ' DA';
+                    }
+                }
+            }
+        }
+    }
+});
+
+// 4. Payment Methods Chart
+const paymentMethodsCtx = document.getElementById('paymentMethodsChart').getContext('2d');
+new Chart(paymentMethodsCtx, {
+    type: 'doughnut',
+    data: {
+        labels: Object.keys(financialData.paymentMethods),
+        datasets: [{
+            data: Object.values(financialData.paymentMethods),
+            backgroundColor: [
+                '#4e73df',
+                '#1cc88a',
+                '#36b9cc',
+                '#f6c23e'
+            ],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 15
+                }
+            }
+        }
+    }
+});
+
+// 5. Monthly Trends Chart
+const monthlyTrendsCtx = document.getElementById('monthlyTrendsChart').getContext('2d');
+new Chart(monthlyTrendsCtx, {
+    type: 'bar',
+    data: {
+        labels: financialData.monthlyLabels,
+        datasets: [{
+            label: 'Différence (Facturé - Encaissé)',
+            data: financialData.monthlyRevenue.map((revenue, index) => 
+                revenue - financialData.monthlyPayments[index]
+            ),
+            backgroundColor: function(context) {
+                const value = context.parsed.y;
+                return value >= 0 ? '#e74a3b' : '#1cc88a';
+            },
+            borderColor: function(context) {
+                const value = context.parsed.y;
+                return value >= 0 ? '#e74a3b' : '#1cc88a';
+            },
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value.toLocaleString() + ' DA';
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+
 {% endblock %}

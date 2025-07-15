@@ -5,3 +5,4 @@ django-crispy-forms
 crispy-bootstrap5
 django-bootstrap5
 django-import-export
+python-dateutil

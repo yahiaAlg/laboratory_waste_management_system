@@ -3,8 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Q
 from django.db import models
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, date
 from decimal import Decimal
+import calendar
 
 from apps.invoices.models import Invoice, Payment
 from apps.customers.models import Customer
@@ -63,11 +64,21 @@ def dashboard_index(request):
         total_revenue=Sum('invoice__total_ttc', filter=Q(invoice__status__in=['sent', 'paid']))
     ).filter(total_revenue__isnull=False).order_by('-total_revenue')[:5]
     
-    # Monthly revenue chart data (last 12 months)
+    # Monthly revenue chart data (last 12 months) - FIXED using calendar
     monthly_revenue = []
     for i in range(12):
-        month_start = (today.replace(day=1) - timedelta(days=i*30)).replace(day=1)
-        month_end = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+        # Calculate month/year
+        if today.month - i <= 0:
+            month = 12 + (today.month - i)
+            year = today.year - 1
+        else:
+            month = today.month - i
+            year = today.year
+        
+        # Get month boundaries
+        month_start = date(year, month, 1)
+        last_day = calendar.monthrange(year, month)[1]
+        month_end = date(year, month, last_day)
         
         revenue = Invoice.objects.filter(
             invoice_date__gte=month_start,
@@ -91,6 +102,11 @@ def dashboard_index(request):
                 'status': label,
                 'count': count
             })
+    
+    # Debug: Print some values to check
+    print(f"This month revenue: {this_month_revenue}")
+    print(f"Monthly revenue data: {monthly_revenue}")
+    print(f"Total invoices with sent/paid status: {Invoice.objects.filter(status__in=['sent', 'paid']).count()}")
     
     context = {
         'total_customers': total_customers,
