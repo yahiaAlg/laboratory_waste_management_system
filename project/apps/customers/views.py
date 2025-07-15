@@ -2,14 +2,16 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q, Sum, Prefetch
+from django.db.models import Q, Sum, Prefetch, Count
 from django.http import JsonResponse
 from django.forms import ValidationError
-from .models import Customer, ProductSubscription
+from .models import Customer, ProductSubscription, SubscriptionUsage
 from .forms import CustomerForm, ProductSubscriptionFormSet, SubscriptionUsageForm
 # Calculate usage statistics
 from django.utils import timezone
 
+from datetime import timedelta
+from apps.invoices.models import Invoice
 @login_required
 def customer_list(request):
     # Get all filter parameters
@@ -320,3 +322,176 @@ def get_subscription_info(request, subscription_id):
         return JsonResponse(data)
     except ProductSubscription.DoesNotExist:
         return JsonResponse({'error': 'Subscription not found'}, status=404)
+    
+    
+    
+
+
+@login_required
+def customer_statistics(request, pk):
+    """Display comprehensive statistics for a specific customer"""
+    customer = get_object_or_404(Customer, pk=pk)
+    
+    # Date range for statistics (last 12 months)
+    end_date = timezone.now().date()
+    start_date = end_date - timedelta(days=365)
+    
+    # Basic customer stats
+    total_invoices = Invoice.objects.filter(customer=customer).count()
+    total_revenue = Invoice.objects.filter(customer=customer, status='paid').aggregate(
+        total=Sum('total_ttc')
+    )['total'] or 0
+    
+    pending_invoices = Invoice.objects.filter(
+        customer=customer, 
+        status__in=['sent', 'overdue']
+    ).count()
+    
+    overdue_invoices = Invoice.objects.filter(
+        customer=customer, 
+        status='overdue'
+    ).count()
+    
+    # Subscription statistics
+    active_subscriptions = customer.subscriptions.filter(is_active=True)
+    total_subscription_value = active_subscriptions.aggregate(
+        total=Sum('fixed_payment_amount')
+    )['total'] or 0
+    
+    # Monthly revenue data (last 12 months)
+    monthly_revenue = []
+    monthly_labels = []
+    
+    for i in range(12):
+        month_start = (end_date.replace(day=1) - timedelta(days=i*30)).replace(day=1)
+        month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+        
+        revenue = Invoice.objects.filter(
+            customer=customer,
+            invoice_date__gte=month_start,
+            invoice_date__lte=month_end,
+            status='paid'
+        ).aggregate(total=Sum('total_ttc'))['total'] or 0
+        
+        monthly_revenue.insert(0, float(revenue))
+        monthly_labels.insert(0, month_start.strftime('%b %Y'))
+    
+    # Invoice status distribution
+    invoice_status_data = Invoice.objects.filter(customer=customer).values('status').annotate(
+        count=Count('id')
+    ).order_by('status')
+    
+    status_labels = []
+    status_counts = []
+    status_colors = {
+        'draft': '#6c757d',
+        'sent': '#0d6efd',
+        'paid': '#198754',
+        'overdue': '#dc3545',
+        'cancelled': '#6f42c1'
+    }
+    
+    for item in invoice_status_data:
+        status_labels.append(item['status'].title())
+        status_counts.append(item['count'])
+    
+    # Subscription usage data (last 6 months)
+    subscription_usage_data = []
+    usage_labels = []
+    
+    for subscription in active_subscriptions:
+        monthly_usage = []
+        
+        for i in range(6):
+            month_start = (end_date.replace(day=1) - timedelta(days=i*30)).replace(day=1)
+            month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+            
+            usage = SubscriptionUsage.objects.filter(
+                subscription=subscription,
+                usage_date__gte=month_start,
+                usage_date__lte=month_end
+            ).aggregate(total=Sum('quantity_used'))['total'] or 0
+            
+            monthly_usage.insert(0, float(usage))
+            
+            if i == 0:  # Only create labels once
+                usage_labels.insert(0, month_start.strftime('%b %Y'))
+        
+        subscription_usage_data.append({
+            'label': subscription.product.name,
+            'data': monthly_usage,
+            'borderColor': f'rgb({hash(subscription.product.name) % 255}, {(hash(subscription.product.name) * 2) % 255}, {(hash(subscription.product.name) * 3) % 255})',
+            'backgroundColor': f'rgba({hash(subscription.product.name) % 255}, {(hash(subscription.product.name) * 2) % 255}, {(hash(subscription.product.name) * 3) % 255}, 0.2)'
+        })
+    
+    # Payment method distribution
+    payment_methods = Invoice.objects.filter(customer=customer, status='paid').values('payment_method').annotate(
+        count=Count('id')
+    ).order_by('payment_method')
+    
+    payment_labels = []
+    payment_counts = []
+    payment_colors = ['#ff6384', '#36a2eb', '#cc65fe', '#ffce56', '#4bc0c0']
+    
+    for item in payment_methods:
+        payment_labels.append(dict(Invoice.PAYMENT_METHOD_CHOICES)[item['payment_method']])
+        payment_counts.append(item['count'])
+    
+    # Recent subscription usage summary
+    recent_usage = SubscriptionUsage.objects.filter(
+        subscription__customer=customer,
+        usage_date__gte=start_date
+    ).select_related('subscription__product').order_by('-usage_date')[:10]
+    
+    # Calculate subscription efficiency (usage vs. allowance)
+    subscription_efficiency = []
+    for subscription in active_subscriptions:
+        # Calculate usage for current billing period
+        today = timezone.now().date()
+        if subscription.billing_cycle == 'monthly':
+            period_start = today.replace(day=1)
+        elif subscription.billing_cycle == 'quarterly':
+            quarter = (today.month - 1) // 3
+            period_start = today.replace(month=quarter * 3 + 1, day=1)
+        else:  # yearly
+            period_start = today.replace(month=1, day=1)
+        
+        current_usage = SubscriptionUsage.objects.filter(
+            subscription=subscription,
+            usage_date__gte=period_start,
+            usage_date__lte=today
+        ).aggregate(total=Sum('quantity_used'))['total'] or 0
+        
+        efficiency = (current_usage / subscription.max_quantity_allowed * 100) if subscription.max_quantity_allowed > 0 else 0
+        
+        subscription_efficiency.append({
+            'product': subscription.product.name,
+            'usage': float(current_usage),
+            'allowance': float(subscription.max_quantity_allowed),
+            'efficiency': round(efficiency, 2),
+            'remaining': float(subscription.remaining_quantity)
+        })
+    
+    context = {
+        'customer': customer,
+        'total_invoices': total_invoices,
+        'total_revenue': total_revenue,
+        'pending_invoices': pending_invoices,
+        'overdue_invoices': overdue_invoices,
+        'active_subscriptions_count': active_subscriptions.count(),
+        'total_subscription_value': total_subscription_value,
+        'monthly_revenue': monthly_revenue,
+        'monthly_labels': monthly_labels,
+        'status_labels': status_labels,
+        'status_counts': status_counts,
+        'payment_labels': payment_labels,
+        'payment_counts': payment_counts,
+        'subscription_usage_data': subscription_usage_data,
+        'usage_labels': usage_labels,
+        'recent_usage': recent_usage,
+        'subscription_efficiency': subscription_efficiency,
+        'start_date': start_date,
+        'end_date': end_date,
+    }
+    
+    return render(request, 'customers/customer_statistics.html', context)

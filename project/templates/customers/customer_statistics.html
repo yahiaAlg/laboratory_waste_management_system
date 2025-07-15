@@ -1,0 +1,343 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Statistiques - {{ customer.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+    }
+    
+    .stats-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+    
+    .stats-label {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 400px;
+        margin: 1rem 0;
+    }
+    
+    .chart-small {
+        height: 300px;
+    }
+    
+    .efficiency-bar {
+        height: 20px;
+        background: #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 0.5rem 0;
+    }
+    
+    .efficiency-fill {
+        height: 100%;
+        transition: width 0.3s ease;
+    }
+    
+    .efficiency-good { background: #28a745; }
+    .efficiency-warning { background: #ffc107; }
+    .efficiency-danger { background: #dc3545; }
+    
+    .usage-item {
+        border-left: 4px solid #007bff;
+        padding-left: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .badge-status {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Statistiques</h1>
+            <p class="text-muted">{{ customer.name }}</p>
+            <small class="text-muted">Période: {{ start_date }} - {{ end_date }}</small>
+        </div>
+        <div>
+            <a href="{% url 'customers:detail' customer.pk %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number text-primary">{{ total_invoices }}</div>
+                <div class="stats-label">Factures totales</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number text-success">{{ total_revenue|floatformat:2 }} DA</div>
+                <div class="stats-label">Chiffre d'affaires</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number text-info">{{ active_subscriptions_count }}</div>
+                <div class="stats-label">Abonnements actifs</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number text-warning">{{ pending_invoices }}</div>
+                <div class="stats-label">Factures en attente</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row mb-4">
+        <!-- Monthly Revenue Chart -->
+        <div class="col-md-8">
+            <div class="stats-card">
+                <h5 class="mb-3">
+                    <i class="fas fa-chart-line text-primary"></i>
+                    Évolution du chiffre d'affaires (12 derniers mois)
+                </h5>
+                <div class="chart-container">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Invoice Status Distribution -->
+        <div class="col-md-4">
+            <div class="stats-card">
+                <h5 class="mb-3">
+                    <i class="fas fa-chart-pie text-success"></i>
+                    Répartition des factures
+                </h5>
+                <div class="chart-container chart-small">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="row mb-4">
+        <!-- Subscription Usage Chart -->
+        <div class="col-md-8">
+            <div class="stats-card">
+                <h5 class="mb-3">
+                    <i class="fas fa-chart-area text-info"></i>
+                    Utilisation des abonnements (6 derniers mois)
+                </h5>
+                <div class="chart-container">
+                    <canvas id="usageChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Payment Methods -->
+        <div class="col-md-4">
+            <div class="stats-card">
+                <h5 class="mb-3">
+                    <i class="fas fa-credit-card text-warning"></i>
+                    Modes de paiement
+                </h5>
+                <div class="chart-container chart-small">
+                    <canvas id="paymentChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subscription Efficiency and Recent Usage -->
+    <div class="row">
+        <!-- Subscription Efficiency -->
+        <div class="col-md-6">
+            <div class="stats-card">
+                <h5 class="mb-3">
+                    <i class="fas fa-tachometer-alt text-primary"></i>
+                    Efficacité des abonnements
+                </h5>
+                {% for item in subscription_efficiency %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold">{{ item.product }}</span>
+                        <span class="badge bg-secondary">{{ item.efficiency }}%</span>
+                    </div>
+                    <div class="efficiency-bar">
+                        <div class="efficiency-fill {% if item.efficiency >= 80 %}efficiency-good{% elif item.efficiency >= 50 %}efficiency-warning{% else %}efficiency-danger{% endif %}" 
+                             style="width: {{ item.efficiency }}%"></div>
+                    </div>
+                    <small class="text-muted">
+                        Utilisé: {{ item.usage }} / {{ item.allowance }} 
+                        (Restant: {{ item.remaining }})
+                    </small>
+                </div>
+                {% empty %}
+                <p class="text-muted">Aucun abonnement actif</p>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Recent Usage -->
+        <div class="col-md-6">
+            <div class="stats-card">
+                <h5 class="mb-3">
+                    <i class="fas fa-history text-success"></i>
+                    Utilisation récente
+                </h5>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    {% for usage in recent_usage %}
+                    <div class="usage-item">
+                        <div class="d-flex justify-content-between">
+                            <span class="fw-bold">{{ usage.subscription.product.name }}</span>
+                            <span class="badge bg-primary">{{ usage.quantity_used }}</span>
+                        </div>
+                        <small class="text-muted">{{ usage.usage_date }}</small>
+                        {% if usage.reference %}
+                        <br><small class="text-muted">Réf: {{ usage.reference }}</small>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">Aucune utilisation récente</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Revenue Chart
+const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+const revenueChart = new Chart(revenueCtx, {
+    type: 'line',
+    data: {
+        labels: {{ monthly_labels|safe }},
+        datasets: [{
+            label: 'Chiffre d\'affaires (DA)',
+            data: {{ monthly_revenue|safe }},
+            borderColor: 'rgb(54, 162, 235)',
+            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value.toLocaleString() + ' DA';
+                    }
+                }
+            }
+        },
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' DA';
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Status Chart
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+const statusChart = new Chart(statusCtx, {
+    type: 'doughnut',
+    data: {
+        labels: {{ status_labels|safe }},
+        datasets: [{
+            data: {{ status_counts|safe }},
+            backgroundColor: [
+                '#6c757d', '#0d6efd', '#198754', '#dc3545', '#6f42c1'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Usage Chart
+const usageCtx = document.getElementById('usageChart').getContext('2d');
+const usageChart = new Chart(usageCtx, {
+    type: 'line',
+    data: {
+        labels: {{ usage_labels|safe }},
+        datasets: {{ subscription_usage_data|safe }}
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        },
+        plugins: {
+            legend: {
+                position: 'top'
+            }
+        }
+    }
+});
+
+// Payment Methods Chart
+const paymentCtx = document.getElementById('paymentChart').getContext('2d');
+const paymentChart = new Chart(paymentCtx, {
+    type: 'pie',
+    data: {
+        labels: {{ payment_labels|safe }},
+        datasets: [{
+            data: {{ payment_counts|safe }},
+            backgroundColor: [
+                '#ff6384', '#36a2eb', '#cc65fe', '#ffce56', '#4bc0c0'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

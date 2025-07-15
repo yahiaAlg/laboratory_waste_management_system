@@ -10,7 +10,7 @@ urlpatterns = [
     path('<int:pk>/', views.customer_detail, name='detail'),
     path('<int:pk>/update/', views.customer_update, name='update'),
     path('<int:pk>/delete/', views.customer_delete, name='delete'),
-    
+    path('<int:pk>/statistics/', views.customer_statistics, name='statistics'),
     # Subscription management
     path('subscription/<int:pk>/', views.subscription_detail, name='subscription_detail'),
     path('subscription/<int:subscription_id>/usage/', views.subscription_usage_list, name='subscription_usage_list'),
