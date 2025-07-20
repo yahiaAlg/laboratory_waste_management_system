@@ -149,7 +149,7 @@
                                         <a href="{% url 'invoices:print' invoice.pk %}" class="btn btn-outline-success" title="Imprimer" target="_blank">
                                             <i class="fas fa-print"></i>
                                         </a>
-                                        {% if user.role == 'admin' %}
+                                        {% if user.role == 'admin' and invoice.status != 'paid' %}
                                         <a href="{% url 'invoices:delete' invoice.pk %}" class="btn btn-outline-danger" title="Supprimer" 
                                            onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette facture ?')">
                                             <i class="fas fa-trash"></i>

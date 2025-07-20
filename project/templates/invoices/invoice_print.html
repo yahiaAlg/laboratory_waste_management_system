@@ -246,6 +246,7 @@
                 <th>REF.</th>
                 <th>DESIGNATIONS</th>
                 <th>UNITE</th>
+                <th>DATE DE LIGNE</th>
                 <th>QTE</th>
                 <th>Prix U HT</th>
                 <th>MONTANT HT</th>
@@ -257,6 +258,7 @@
                 <td>{{ line.reference|default:"4-1 SPA" }}</td>
                 <td style="text-align: left;">{{ line.description }}</td>
                 <td>{{ line.unit }}</td>
+                <td>{{ line.line_date }}</td>
                 <td>{{ line.quantity }}</td>
                 <td>{{ line.unit_price|floatformat:2 }}</td>
                 <td>{{ line.line_total|floatformat:2 }}</td>

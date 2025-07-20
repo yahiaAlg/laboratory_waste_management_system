@@ -253,6 +253,7 @@
                                     <th>Désignation</th>
                                     <th>Unité</th>
                                     <th>Quantité</th>
+                                    <th>Date de Ligne</th>
                                     <th>Prix unit. HT</th>
                                     <th>Total HT</th>
                                     {% if invoice.customer.is_subscriber %}
@@ -267,6 +268,7 @@
                                     <td>{{ line.description }}</td>
                                     <td>{{ line.unit }}</td>
                                     <td>{{ line.quantity }}</td>
+                                    <td> {{line.line_date}}</td>
                                     <td>{{ line.unit_price|floatformat:2|intcomma }} DA</td>
                                     <td>{{ line.line_total|floatformat:2|intcomma }} DA</td>
                                     {% if invoice.customer.is_subscriber %}

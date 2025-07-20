@@ -1,3 +1,4 @@
+from datetime import timezone
 from django.db import models
 from django.core.validators import MinValueValidator
 from decimal import Decimal
@@ -128,7 +129,10 @@ class InvoiceLine(models.Model):
     quantity = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)], verbose_name="Quantité")
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)], verbose_name="Prix unitaire HT")
     line_total = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Montant HT")
-    
+    line_date = models.DateTimeField(verbose_name="Date d'ajout", null=True, blank=True)
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le", null=True, blank=True)
+    updated_at = models.DateTimeField(verbose_name="Modifié le", auto_now=True, null=True, blank=True)
     class Meta:
         verbose_name = "Ligne de facture"
         verbose_name_plural = "Lignes de facture"

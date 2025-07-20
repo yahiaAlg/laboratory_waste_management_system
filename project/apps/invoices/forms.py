@@ -1,5 +1,5 @@
 # Enhanced forms.py with improved payment form
-
+from django.utils import timezone
 from django import forms
 from django.forms import inlineformset_factory
 from django.core.exceptions import ValidationError
@@ -16,7 +16,7 @@ class InvoiceForm(forms.ModelForm):
         ]
         widgets = {
             'customer': forms.Select(attrs={'class': 'form-select'}),
-            'invoice_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'invoice_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}, format='%Y-%m-%d'),
             'due_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'payment_method': forms.Select(attrs={'class': 'form-select'}),
             'driver_name': forms.TextInput(attrs={'class': 'form-control'}),
@@ -27,11 +27,17 @@ class InvoiceForm(forms.ModelForm):
             'discount_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
         }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.pk and not self.initial.get('invoice_date'):
+            self.fields['invoice_date'].initial = timezone.now()
+        else:
+            self.fields['invoice_date'].initial = self.instance.invoice_date if self.instance.invoice_date else timezone.now()
 
 class InvoiceLineForm(forms.ModelForm):
     class Meta:
         model = InvoiceLine
-        fields = ['product', 'reference', 'description', 'unit', 'quantity', 'unit_price']
+        fields = ['product', 'reference', 'description', 'unit', 'quantity', 'unit_price', 'line_date']
         widgets = {
             'product': forms.Select(attrs={'class': 'form-select product-select'}),
             'reference': forms.TextInput(attrs={'class': 'form-control'}),
@@ -39,7 +45,16 @@ class InvoiceLineForm(forms.ModelForm):
             'unit': forms.TextInput(attrs={'class': 'form-control'}),
             'quantity': forms.NumberInput(attrs={'class': 'form-control quantity-input', 'step': '0.01'}),
             'unit_price': forms.NumberInput(attrs={'class': 'form-control price-input', 'step': '0.01'}),
+            'line_date': forms.DateTimeInput(
+                attrs={'class': 'form-control', 'type': 'datetime-local'},
+                format='%Y-%m-%dT%H:%M'
+            ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.pk and not self.initial.get('line_date'):
+            self.fields['line_date'].initial = timezone.now()
 
 # Formset for invoice lines
 InvoiceLineFormSet = inlineformset_factory(
