@@ -180,7 +180,8 @@
                                 {{ form.discount_amount }}
                             </div>
                             <div class="col-md-6">
-                                <label for="{{ form.timbre_fiscal.id_for_label }}" class="form-label">{{ form.timbre_fiscal.label }}</label>
+                                <label class="form-label">Timbre fiscal</label>
+                                <input type="text" class="form-control" id="timbre-display-input" readonly style="background-color: #f8f9fa;">
                                 {{ form.timbre_fiscal }}
                             </div>
                         </div>
@@ -291,7 +292,6 @@
 {% block extra_js %}
 <script>
 // Get company data from Django context
-// Get company data from Django context
 const tvaRateInput = document.querySelector('input[name="tva_rate"]');
 const tvaRateValue = tvaRateInput ? parseFloat(tvaRateInput.value) : 19;
 const validTvaRate = isNaN(tvaRateValue) ? 19 : tvaRateValue;
@@ -306,6 +306,25 @@ let lineIndex = {{ formset.total_form_count }};
 let customerSubscriptions = {};
 let currentCustomerId = null;
 let currentCustomerHasLegalInfo = false; // Track customer legal info status
+
+// Calculate timbre fiscal based on amount (HT + TVA)
+
+function calculateTimbreFiscal(amountHtPlusTva, paymentMethod) {
+    // Only apply timbre fiscal for cash payments
+    if (paymentMethod !== 'cash') {
+        return 0;
+    }
+    
+    if (amountHtPlusTva < 300) {
+        return 5.00;
+    } else if (amountHtPlusTva < 30000) {
+        return amountHtPlusTva * 0.01; // 1%
+    } else if (amountHtPlusTva < 100000) {
+        return amountHtPlusTva * 0.015; // 1.5%
+    } else {
+        return amountHtPlusTva * 0.02; // 2%
+    }
+}
 
 // Customer selection change handler
 document.addEventListener('change', function(e) {
@@ -327,7 +346,7 @@ document.addEventListener('change', function(e) {
 
 // Check if customer has legal information
 function checkCustomerLegalInfo(customerId) {
-    fetch(`/customers/api/customer-legal-info/?customer_id=${customerId}`, {
+    fetch(`/invoices/api/customer-legal-info/?customer_id=${customerId}`, {
         method: 'GET',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
@@ -503,6 +522,8 @@ document.addEventListener('change', function(e) {
         }
     }
 });
+
+
 
 // Load product data with subscription support
 function loadProductData(productId, row) {
@@ -687,7 +708,8 @@ function addLineEventListeners(row) {
     }
 }
 
-// Calculate invoice totals - UPDATED with legal info check
+// Calculate invoice totals - UPDATED with automatic timbre calculation
+// Calculate invoice totals - UPDATED with payment method condition for timbre
 function calculateTotals() {
     let subtotal = 0;
     
@@ -697,18 +719,33 @@ function calculateTotals() {
     });
     
     const discountInput = document.getElementById('id_discount_amount');
-    const timbreInput = document.getElementById('id_timbre_fiscal');
+    const timbreInput = document.getElementById('id_timbre_fiscal'); // Hidden input
+    const timbreDisplayInput = document.getElementById('timbre-display-input'); // Display input
     const otherTaxesInput = document.getElementById('id_other_taxes');
+    const paymentMethodSelect = document.querySelector('[name="payment_method"]');
     
     const discount = discountInput ? (parseFloat(discountInput.value) || 0) : 0;
-    const timbre = timbreInput ? (parseFloat(timbreInput.value) || 0) : 0;
     const otherTaxes = otherTaxesInput ? (parseFloat(otherTaxesInput.value) || 0) : 0;
+    const paymentMethod = paymentMethodSelect ? paymentMethodSelect.value : '';
     
     const discountedSubtotal = Math.max(0, subtotal - discount);
     
     // Apply TVA only if customer has legal information
     const effectiveTvaRate = currentCustomerHasLegalInfo ? TVA_RATE : 0;
     const tva = discountedSubtotal * effectiveTvaRate;
+    
+    // Calculate timbre fiscal automatically based on (HT + TVA) and payment method
+    const amountHtPlusTva = discountedSubtotal + tva;
+    const timbre = calculateTimbreFiscal(amountHtPlusTva, paymentMethod);
+    
+    // Update hidden timbre input and display
+    if (timbreInput) {
+        timbreInput.value = timbre.toFixed(2);
+    }
+    if (timbreDisplayInput) {
+        timbreDisplayInput.value = timbre.toFixed(2) + ' DA';
+    }
+    
     const total = discountedSubtotal + tva + timbre + otherTaxes;
     
     // Update display elements
@@ -727,6 +764,13 @@ function calculateTotals() {
     if (totalDisplay) totalDisplay.textContent = (isNaN(total) ? 0 : total).toFixed(2) + ' DA';
 }
 
+// Payment method change handler
+document.addEventListener('change', function(e) {
+    if (e.target.name === 'payment_method') {
+        calculateTotals(); // Recalculate when payment method changes
+    }
+});
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     // Update TVA label with current rate
@@ -738,8 +782,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add event listeners to existing rows
     document.querySelectorAll('.invoice-line-row').forEach(addLineEventListeners);
     
-    // Add event listeners to summary fields
-    ['id_discount_amount', 'id_timbre_fiscal', 'id_other_taxes'].forEach(id => {
+    // Add event listeners to payment method field
+    const paymentMethodSelect = document.querySelector('[name="payment_method"]');
+    if (paymentMethodSelect) {
+        paymentMethodSelect.addEventListener('change', calculateTotals);
+    }
+    
+    // Add event listeners to summary fields (exclude timbre - it's now automatic)
+    ['id_discount_amount', 'id_other_taxes'].forEach(id => {
         const element = document.getElementById(id);
         if (element) {
             element.addEventListener('input', calculateTotals);

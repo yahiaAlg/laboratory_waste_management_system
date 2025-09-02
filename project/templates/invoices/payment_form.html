@@ -216,11 +216,19 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Quick amount buttons
+    const currentDate = new Date();
+
+    const paymentDate = document.querySelector("#{{form.payment_date.id_for_label}}");
+    paymentDate.value = currentDate.toISOString().substr(0, 10);
+    console.log(currentDate);
+    console.log(paymentDate);
     document.querySelectorAll('.quick-amount').forEach(button => {
-        button.addEventListener('click', function() {
-            const amount = this.getAttribute('data-amount');
+        button.addEventListener('click', function(e) {
             const amountField = document.getElementById('{{ form.amount.id_for_label }}');
-            amountField.value = amount;
+            const amountString = e.target.dataset.amount.replace(",", ".");
+            
+            // Use the string directly since it's already formatted with proper precision
+            amountField.value = parseFloat(amountString).toFixed(2);
             
             // Remove active class from all buttons
             document.querySelectorAll('.quick-amount').forEach(btn => {
@@ -234,8 +242,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Payment method change handler
+    // Make payment method field readonly after initial setup
     const paymentMethodSelect = document.getElementById('{{ form.payment_method.id_for_label }}');
+    
+    // Set readonly attribute
+    paymentMethodSelect.setAttribute('readonly', true);
+    paymentMethodSelect.style.backgroundColor = '#f8f9fa';
+    paymentMethodSelect.style.cursor = 'not-allowed';
+    
+    // Prevent changes to payment method
+    paymentMethodSelect.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+    });
+    
+    paymentMethodSelect.addEventListener('keydown', function(e) {
+        e.preventDefault();
+    });
+    
+    // Initialize reference field based on current payment method
     const referenceField = document.getElementById('{{ form.reference.id_for_label }}');
     
     function updateReferenceField() {
@@ -251,8 +275,6 @@ document.addEventListener('DOMContentLoaded', function() {
             referenceField.required = false;
         }
     }
-    
-    paymentMethodSelect.addEventListener('change', updateReferenceField);
     
     // Initialize on page load
     updateReferenceField();
@@ -279,9 +301,14 @@ document.addEventListener('DOMContentLoaded', function() {
 /* Enhanced button styles */
 .quick-amount {
     transition: all 0.2s ease;
+    font-size: 0.875rem;
+    padding: 8px 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.quick-amount:hover {
+.quick-amount:hover:not(.active) {
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
@@ -294,6 +321,19 @@ document.addEventListener('DOMContentLoaded', function() {
 .form-text {
     font-size: 0.875em;
     margin-top: 0.5rem;
+}
+
+/* Readonly payment method styling */
+select[readonly] {
+    background-color: #f8f9fa !important;
+    cursor: not-allowed !important;
+}
+
+@media (max-width: 768px) {
+    .quick-amount {
+        font-size: 0.75rem;
+        padding: 6px 2px;
+    }
 }
 </style>
 {% endblock %}

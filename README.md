@@ -422,7 +422,6 @@ This system should replicate the professional appearance and functionality of th
 
 NOTICE : create me the django files and templates, for this project as per the app requirements description , no typscript, no react , no vue , only django, html, css, js
 
-
 for launching via powershell
 
 ```

@@ -620,3 +620,14 @@ def payment_receipt(request, payment_pk):
         'title': f'Reçu de paiement - {payment.invoice.invoice_number}'
     }
     return render(request, 'invoices/payment_receipt.html', context)
+
+
+"""
+timbre_fiscale = (HT + tva) * rate
+                 |________|
+             amount_to_be_paid
+if amount_to_be_paid < 300 ==> timbre_fiscale = 5 # constant value
+if 300 < amount_to_be_paid < 30000 ==> rate = 1% # variable value for the timbre_fiscale 
+if 30000 < amount_to_be_paid < 10000 ==> rate = 1.5% 
+if amount_to_be_paid > 10000 ==> rate = 2% 
+"""

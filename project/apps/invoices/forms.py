@@ -1,6 +1,7 @@
-# Enhanced forms.py with improved payment form
+# Enhanced forms.py with improved payment form and read-only timbre fiscal
 from django.utils import timezone
 from django import forms
+from django.db.models import Sum
 from django.forms import inlineformset_factory
 from django.core.exceptions import ValidationError
 from decimal import Decimal
@@ -22,17 +23,21 @@ class InvoiceForm(forms.ModelForm):
             'driver_name': forms.TextInput(attrs={'class': 'form-control'}),
             'vehicle_registration': forms.TextInput(attrs={'class': 'form-control'}),
             'destination': forms.TextInput(attrs={'class': 'form-control'}),
-            'timbre_fiscal': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'timbre_fiscal': forms.HiddenInput(),  # Now hidden since it's calculated automatically
             'other_taxes': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'discount_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
         }
+        
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if not self.instance.pk and not self.initial.get('invoice_date'):
             self.fields['invoice_date'].initial = timezone.now()
         else:
             self.fields['invoice_date'].initial = self.instance.invoice_date if self.instance.invoice_date else timezone.now()
+        
+        # Add help text for automatic calculation
+        self.fields['timbre_fiscal'].help_text = "Calculé automatiquement selon le montant HT + TVA"
 
 class InvoiceLineForm(forms.ModelForm):
     class Meta:
@@ -78,7 +83,8 @@ class PaymentForm(forms.ModelForm):
                 'type': 'date'
             }),
             'payment_method': forms.Select(attrs={
-                'class': 'form-select'
+                'class': 'form-select',
+                "readonly": "true"
             }),
             'reference': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -109,7 +115,7 @@ class PaymentForm(forms.ModelForm):
         
         if self.invoice:
             # Calculate remaining balance
-            from django.db.models import Sum
+            
             paid_amount = Payment.objects.filter(invoice=self.invoice).aggregate(
                 Sum('amount'))['amount__sum'] or Decimal('0')
             remaining = self.invoice.total_ttc - paid_amount

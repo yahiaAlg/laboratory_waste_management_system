@@ -15,12 +15,11 @@ class Invoice(models.Model):
         ('cancelled', 'Annulée'),
     ]
     
-    PAYMENT_METHOD_CHOICES = [
-        ('cash', 'ESPÈCE'),
-        ('check', 'CHÈQUE'),
-        ('transfer', 'VIREMENT'),
-        ('card', 'CARTE'),
-    ]
+    class PaymentMethods(models.TextChoices):
+        CASH = 'cash', 'ESPÈCE'
+        CHECK = 'check', 'CHÈQUE'
+        TRANSFER = 'transfer', 'VIREMENT'
+        CARD = 'card', 'CARTE'
     
     # Invoice identification
     invoice_number = models.CharField(max_length=50, unique=True, verbose_name="Numéro de facture")
@@ -33,7 +32,7 @@ class Invoice(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, verbose_name="Client")
     
     # Payment information
-    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='check', verbose_name="Mode de règlement")
+    payment_method = models.CharField(max_length=20, choices=PaymentMethods.choices, default='check', verbose_name="Mode de règlement")
     
     # Logistics information
     driver_name = models.CharField(max_length=100, blank=True, verbose_name="Chauffeur")
@@ -77,6 +76,25 @@ class Invoice(models.Model):
         
         super().save(*args, **kwargs)
 
+    def calculate_timbre_fiscal(self, amount_ht_plus_tva):
+        """
+        Calculate timbre fiscal based on the amount (HT + TVA)
+        
+        Rules:
+        - If amount < 300: timbre = 5 (constant)
+        - If 300 <= amount < 30000: rate = 1%
+        - If 30000 <= amount < 100000: rate = 1.5%
+        - If amount >= 100000: rate = 2%
+        """
+        if amount_ht_plus_tva < 300:
+            return Decimal('5.00')
+        elif amount_ht_plus_tva < 30000:
+            return amount_ht_plus_tva * Decimal('0.01')  # 1%
+        elif amount_ht_plus_tva < 100000:  # Assuming 10000 was a typo and should be 100000
+            return amount_ht_plus_tva * Decimal('0.015')  # 1.5%
+        else:
+            return amount_ht_plus_tva * Decimal('0.02')  # 2%
+
     def calculate_totals(self):
         """Calculate invoice totals based on line items"""
         if not self.pk:
@@ -110,6 +128,13 @@ class Invoice(models.Model):
         else:
             self.tva_amount = Decimal('0.00')
         
+        if self.payment_method == self.PaymentMethods.CASH:
+            # Calculate timbre fiscal based on (HT + TVA)
+            amount_ht_plus_tva = discounted_subtotal + self.tva_amount
+            self.timbre_fiscal = self.calculate_timbre_fiscal(amount_ht_plus_tva)
+        else:
+            self.timbre_fiscal = Decimal('0.00')
+        
         # Calculate total
         self.total_ttc = discounted_subtotal + self.tva_amount + self.timbre_fiscal + self.other_taxes
 
@@ -117,7 +142,8 @@ class Invoice(models.Model):
     def is_overdue(self):
         from django.utils import timezone
         return self.status != 'paid' and self.due_date < timezone.now().date()
-
+    
+    
 class InvoiceLine(models.Model):
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, verbose_name="Facture")
     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Produit/Service")
