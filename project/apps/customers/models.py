@@ -125,12 +125,14 @@ class ProductSubscription(models.Model):
     def clean(self):
         from django.core.exceptions import ValidationError
         
-        # Only validate if product is set and has required attributes
-        if self.product_id and self.product:
+        # Only validate if product is set and has required attributes AND max_quantity_allowed is not None
+        if self.product_id and self.product and self.max_quantity_allowed is not None:
             # Check if product has is_service attribute and stock_quantity
             if hasattr(self.product, 'is_service') and hasattr(self.product, 'stock_quantity'):
                 # Validate that max_quantity doesn't exceed available stock for physical products
-                if not self.product.is_service and self.max_quantity_allowed > self.product.stock_quantity:
+                if (not self.product.is_service and 
+                    self.product.stock_quantity is not None and 
+                    self.max_quantity_allowed > self.product.stock_quantity):
                     raise ValidationError(
                         f"La quantité maximale ({self.max_quantity_allowed}) ne peut pas dépasser le stock disponible ({self.product.stock_quantity})"
                     )

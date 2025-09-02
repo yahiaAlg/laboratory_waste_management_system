@@ -8,7 +8,7 @@ class CompanyForm(forms.ModelForm):
             'name', 'business_description', 'address_line1', 'address_line2',
             'city', 'postal_code', 'state', 'phone', 'fax', 'email', 'website',
             'capital_social', 'rc', 'art', 'nis', 'nif', 'rib', 'logo',
-            'tva_rate', 'timbre_fiscal', 'invoice_prefix'
+            'tva_rate', 'invoice_prefix'
         ]
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),

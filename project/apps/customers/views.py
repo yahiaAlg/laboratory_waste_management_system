@@ -148,6 +148,8 @@ def customer_detail(request, pk):
     }
     return render(request, 'customers/customer_detail.html', context)
 
+# Replace the problematic lines in your customer_create view (around line 166)
+
 @login_required
 def customer_create(request):
     if request.method == 'POST':
@@ -160,9 +162,11 @@ def customer_create(request):
             # Save subscriptions if customer is marked as subscriber
             if customer.is_subscriber:
                 formset.instance = customer
-                formset.save()
+                subscriptions = formset.save()
                 
-                subscription_count = len([f for f in formset if f.cleaned_data and not f.cleaned_data.get('DELETE')])
+                # Count actual saved subscriptions (exclude deleted ones)
+                subscription_count = len([s for s in subscriptions if s and hasattr(s, 'pk') and s.pk])
+                
                 if subscription_count > 0:
                     messages.success(request, f'Client {customer.name} créé avec {subscription_count} abonnement(s).')
                 else:
@@ -182,6 +186,7 @@ def customer_create(request):
     }
     return render(request, 'customers/customer_form.html', context)
 
+
 @login_required
 def customer_update(request, pk):
     customer = get_object_or_404(Customer, pk=pk)
@@ -195,14 +200,28 @@ def customer_update(request, pk):
             
             # Handle subscriptions based on is_subscriber status
             if customer.is_subscriber:
+                # Save the formset - this will handle creation, updates, and deletions
                 formset.save()
                 messages.success(request, f'Client {customer.name} et ses abonnements modifiés avec succès.')
             else:
-                # If no longer subscriber, deactivate all subscriptions
+                # If no longer subscriber, deactivate all subscriptions instead of deleting them
+                # This preserves historical data
                 customer.subscriptions.update(is_active=False)
                 messages.success(request, f'Client {customer.name} modifié avec succès. Abonnements désactivés.')
             
             return redirect('customers:detail', pk=customer.pk)
+        else:
+            # Add debugging information for form errors
+            if not form.is_valid():
+                messages.error(request, 'Erreurs dans le formulaire client.')
+            if not formset.is_valid():
+                messages.error(request, 'Erreurs dans les abonnements.')
+                # Add specific formset errors to messages
+                for i, form_errors in enumerate(formset.errors):
+                    if form_errors:
+                        for field, errors in form_errors.items():
+                            messages.error(request, f'Abonnement {i+1}, {field}: {errors[0]}')
+                            
     else:
         form = CustomerForm(instance=customer)
         formset = ProductSubscriptionFormSet(instance=customer)

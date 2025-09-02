@@ -67,6 +67,30 @@ class ProductSubscriptionForm(forms.ModelForm):
             self.fields['fixed_payment_amount'].required = False
             self.fields['max_quantity_allowed'].required = False
             self.fields['start_date'].required = False
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        # If this form is marked for deletion, skip validation
+        if self.cleaned_data.get('DELETE'):
+            return cleaned_data
+            
+        # If no product is selected and other fields are empty, this is an empty form - skip validation
+        product = cleaned_data.get('product')
+        fixed_amount = cleaned_data.get('fixed_payment_amount')
+        max_quantity = cleaned_data.get('max_quantity_allowed')
+        
+        if not product and not fixed_amount and not max_quantity:
+            return cleaned_data
+            
+        # If product is selected, ensure required fields are filled
+        if product and (not fixed_amount or not max_quantity):
+            if not fixed_amount:
+                self.add_error('fixed_payment_amount', 'Ce champ est requis quand un produit est sélectionné.')
+            if not max_quantity:
+                self.add_error('max_quantity_allowed', 'Ce champ est requis quand un produit est sélectionné.')
+        
+        return cleaned_data
 
 class SubscriptionUsageForm(forms.ModelForm):
     class Meta:
@@ -79,12 +103,28 @@ class SubscriptionUsageForm(forms.ModelForm):
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
-# Inline formset for managing customer subscriptions
-ProductSubscriptionFormSet = inlineformset_factory(
+# Custom formset with better validation
+class ProductSubscriptionFormSet(inlineformset_factory(
     Customer,
     ProductSubscription,
     form=ProductSubscriptionForm,
     extra=1,
     can_delete=True,
     fields=['product', 'fixed_payment_amount', 'max_quantity_allowed', 'billing_cycle', 'start_date', 'end_date', 'is_active']
-)
+)):
+    
+    def clean(self):
+        """Custom formset validation"""
+        if any(self.errors):
+            return
+            
+        # Check for duplicate products
+        products = []
+        for form in self.forms:
+            if form.cleaned_data and not form.cleaned_data.get('DELETE'):
+                product = form.cleaned_data.get('product')
+                if product:
+                    if product in products:
+                        form.add_error('product', 'Ce produit a déjà été ajouté.')
+                    else:
+                        products.append(product)

@@ -12,6 +12,13 @@
         </a>
     </div>
     
+    <!-- Warning for subscription changes -->
+    <div id="subscription-warning" class="alert alert-warning alert-dismissible fade show" role="alert" style="display: none;">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Attention :</strong> Décocher "Abonné avec offres" désactivera tous les abonnements existants.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    
     <form method="post" class="needs-validation" novalidate>
         {% csrf_token %}
         
@@ -294,9 +301,14 @@
                             {% endfor %}
                         </div>
                         
-                        <button type="button" id="add-subscription" class="btn btn-outline-success btn-sm">
-                            <i class="fas fa-plus me-2"></i>Ajouter un abonnement
-                        </button>
+                        <div class="d-flex gap-2">
+                            <button type="button" id="add-subscription" class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-plus me-2"></i>Ajouter un abonnement
+                            </button>
+                            <button type="button" id="clear-all-subscriptions" class="btn btn-outline-warning btn-sm" style="display: none;">
+                                <i class="fas fa-trash-alt me-2"></i>Vider tout
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -396,8 +408,13 @@
 document.addEventListener('DOMContentLoaded', function() {
     const subscriberCheckbox = document.getElementById('{{ form.is_subscriber.id_for_label }}');
     const subscriptionsSection = document.getElementById('subscriptions-section');
+    const subscriptionWarning = document.getElementById('subscription-warning');
     const addSubscriptionBtn = document.getElementById('add-subscription');
+    const clearAllBtn = document.getElementById('clear-all-subscriptions');
     const subscriptionForms = document.getElementById('subscription-forms');
+    
+    // Track initial subscriber state
+    const initialSubscriberState = subscriberCheckbox.checked;
     
     // Get today's date for default start date
     const today = new Date().toISOString().split('T')[0];
@@ -405,9 +422,71 @@ document.addEventListener('DOMContentLoaded', function() {
     function toggleSubscriberFields() {
         if (subscriberCheckbox.checked) {
             subscriptionsSection.style.display = 'block';
+            updateClearAllButtonVisibility();
         } else {
             subscriptionsSection.style.display = 'none';
+            // Mark all existing subscriptions for deletion when unchecking subscriber
+            markAllForDeletion();
         }
+        
+        // Show warning if unchecking and there were existing subscriptions
+        if (initialSubscriberState && !subscriberCheckbox.checked && hasExistingSubscriptions()) {
+            subscriptionWarning.style.display = 'block';
+        } else {
+            subscriptionWarning.style.display = 'none';
+        }
+    }
+    
+    function hasExistingSubscriptions() {
+        // Check if there are any forms with existing data (ID fields)
+        const existingForms = document.querySelectorAll('input[name$="-id"]');
+        return Array.from(existingForms).some(input => input.value);
+    }
+    
+    function markAllForDeletion() {
+        const deleteCheckboxes = document.querySelectorAll('input[name$="-DELETE"]');
+        deleteCheckboxes.forEach(checkbox => {
+            checkbox.checked = true;
+        });
+    }
+    
+    function updateClearAllButtonVisibility() {
+        const visibleForms = document.querySelectorAll('.subscription-form:not([style*="display: none"])');
+        clearAllBtn.style.display = visibleForms.length > 1 ? 'inline-block' : 'none';
+    }
+    
+    function clearAllSubscriptions() {
+        const forms = document.querySelectorAll('.subscription-form');
+        forms.forEach((form, index) => {
+            if (index === 0) {
+                // Keep first form but clear its values
+                const inputs = form.querySelectorAll('input:not([type="hidden"]), select');
+                inputs.forEach(input => {
+                    if (input.type === 'checkbox') {
+                        input.checked = input.name.includes('is_active');
+                    } else if (input.type === 'date' && input.name.includes('start_date')) {
+                        input.value = today;
+                    } else {
+                        input.value = '';
+                    }
+                });
+            } else {
+                // Mark for deletion or remove
+                const deleteCheckbox = form.querySelector('input[name$="-DELETE"]');
+                if (deleteCheckbox) {
+                    deleteCheckbox.checked = true;
+                    form.style.display = 'none';
+                } else {
+                    form.remove();
+                }
+            }
+        });
+        
+        // Update form count to 1
+        const totalForms = document.querySelector('#id_subscriptions-TOTAL_FORMS');
+        totalForms.value = '1';
+        
+        updateClearAllButtonVisibility();
     }
     
     function addSubscriptionForm() {
@@ -415,13 +494,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const formCount = parseInt(totalForms.value);
         
         // Clone the first form and update its indices
-        const emptyForm = document.querySelector('.subscription-form').cloneNode(true);
+        const firstForm = document.querySelector('.subscription-form');
+        const emptyForm = firstForm.cloneNode(true);
         const formRegex = RegExp(`subscriptions-(\\d){1}-`, 'g');
         
         emptyForm.innerHTML = emptyForm.innerHTML.replace(formRegex, `subscriptions-${formCount}-`);
         emptyForm.setAttribute('data-form-index', formCount);
+        emptyForm.style.display = 'block'; // Ensure it's visible
         
-        // Clear values and set default start date
+        // Clear values and set defaults
         const inputs = emptyForm.querySelectorAll('input, select');
         inputs.forEach(input => {
             if (input.type === 'checkbox') {
@@ -433,14 +514,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Add remove button if it doesn't exist
-        const removeBtn = emptyForm.querySelector('.remove-subscription');
+        // Ensure remove button exists
+        let removeBtn = emptyForm.querySelector('.remove-subscription');
         if (!removeBtn) {
-            const lastCol = emptyForm.querySelector('.col-md-1');
-            const btnHtml = `<button type="button" class="btn btn-sm btn-outline-danger remove-subscription" title="Supprimer">
+            const lastCol = emptyForm.querySelector('.col-md-1 .mb-3');
+            const btnHtml = `<button type="button" class="btn btn-sm btn-outline-danger remove-subscription mt-2" title="Supprimer">
                                 <i class="fas fa-trash"></i>
                             </button>`;
-            lastCol.querySelector('.mb-3').innerHTML += btnHtml;
+            lastCol.insertAdjacentHTML('beforeend', btnHtml);
+            removeBtn = emptyForm.querySelector('.remove-subscription');
         }
         
         subscriptionForms.appendChild(emptyForm);
@@ -448,6 +530,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Attach remove handler to new form
         attachRemoveHandler(emptyForm);
+        updateClearAllButtonVisibility();
     }
     
     function attachRemoveHandler(form) {
@@ -465,6 +548,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const totalForms = document.querySelector('#id_subscriptions-TOTAL_FORMS');
                     totalForms.value = parseInt(totalForms.value) - 1;
                 }
+                updateClearAllButtonVisibility();
             });
         }
     }
@@ -472,6 +556,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize event handlers
     subscriberCheckbox.addEventListener('change', toggleSubscriberFields);
     addSubscriptionBtn.addEventListener('click', addSubscriptionForm);
+    clearAllBtn.addEventListener('click', function() {
+        if (confirm('Êtes-vous sûr de vouloir vider tous les abonnements ?')) {
+            clearAllSubscriptions();
+        }
+    });
     
     // Attach remove handlers to existing forms
     document.querySelectorAll('.subscription-form').forEach(attachRemoveHandler);
@@ -485,6 +574,49 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize on page load
     toggleSubscriberFields();
+    
+    // Form validation enhancement
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        // Validate subscription forms if subscriber is checked
+        if (subscriberCheckbox.checked) {
+            const visibleForms = document.querySelectorAll('.subscription-form:not([style*="display: none"])');
+            visibleForms.forEach(subscriptionForm => {
+                const productSelect = subscriptionForm.querySelector('select[name$="-product"]');
+                const amountInput = subscriptionForm.querySelector('input[name$="-fixed_payment_amount"]');
+                const quantityInput = subscriptionForm.querySelector('input[name$="-max_quantity_allowed"]');
+                
+                // If product is selected, ensure amount and quantity are filled
+                if (productSelect && productSelect.value && 
+                    (!amountInput.value || !quantityInput.value)) {
+                    
+                    if (!amountInput.value) {
+                        amountInput.classList.add('is-invalid');
+                        isValid = false;
+                    }
+                    if (!quantityInput.value) {
+                        quantityInput.classList.add('is-invalid');
+                        isValid = false;
+                    }
+                }
+            });
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Veuillez remplir tous les champs requis pour les abonnements.');
+        }
+    });
+    
+    // Remove validation classes on input
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('is-invalid')) {
+            e.target.classList.remove('is-invalid');
+        }
+    });
 });
 </script>
+
 {% endblock %}

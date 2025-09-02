@@ -33,7 +33,7 @@ class Company(models.Model):
     
     # Tax settings
     tva_rate = models.DecimalField(max_digits=5, decimal_places=2, default=19.00, verbose_name="Taux TVA (%)")
-    timbre_fiscal = models.DecimalField(max_digits=8, decimal_places=2, default=0, verbose_name="Timbre fiscal")
+
     
     # Invoice settings
     invoice_prefix = models.CharField(max_length=10, default="FACT", verbose_name="Préfixe facture")
