@@ -114,17 +114,19 @@
                     <div class="card-body p-0">
                         {{ formset.management_form }}
                         
-                        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
-                            <table class="table table-bordered mb-0" id="invoice-lines-table">
+                        <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                            <table class="table table-bordered table-sm mb-0" id="invoice-lines-table">
                                 <thead class="table-light sticky-top">
                                     <tr>
-                                        <th style="min-width: 200px;">Produit/Service</th>
-                                        <th style="min-width: 120px;">Référence</th>
-                                        <th style="min-width: 200px;">Désignation</th>
-                                        <th style="min-width: 80px;">Unité</th>
-                                        <th style="min-width: 100px;">Quantité</th>
-                                        <th style="min-width: 120px;">Prix unit. HT</th>
-                                        <th style="min-width: 120px;">Total HT</th>
+                                        <th style="min-width: 180px;">Produit/Service</th>
+                                        <th style="min-width: 100px;">Référence</th>
+                                        <th style="min-width: 180px;">Désignation</th>
+                                        <th style="min-width: 70px;">Unité</th>
+                                        <th style="min-width: 90px;">Quantité</th>
+                                        <th style="min-width: 110px;">Prix unit. HT</th>
+                                        <th style="min-width: 130px;">Date de ligne</th>
+                                        <th style="min-width: 100px;">Total ligne</th>
+                                        <th style="min-width: 100px;">Stock restant</th>
                                         <th style="min-width: 80px;">Actions</th>
                                     </tr>
                                 </thead>
@@ -140,8 +142,9 @@
                                             <td>{{ form.unit }}</td>
                                             <td>{{ form.quantity }}</td>
                                             <td>{{ form.unit_price }}</td>
-                                            <td>{{form.line_date }}</td>
-                                            <td class="line-total">0.00</td>
+                                            <td>{{ form.line_date }}</td>
+                                            <td class="line-total fw-bold">0.00 DA</td>
+                                            <td class="stock-remaining text-muted">--</td>
                                             <td>
                                                 <button type="button" class="btn btn-sm btn-danger remove-line">
                                                     <i class="fas fa-trash"></i>
@@ -247,11 +250,13 @@
 
 .invoice-line-row td {
     vertical-align: middle;
+    padding: 0.5rem;
 }
 
 .invoice-line-row select,
 .invoice-line-row input {
     min-width: 100%;
+    font-size: 0.875rem;
 }
 
 .subscription-badge {
@@ -267,6 +272,26 @@
 .quantity-warning {
     color: #dc3545;
     font-size: 0.75em;
+}
+
+.line-total {
+    background-color: #f8f9fa;
+    text-align: right;
+    font-family: monospace;
+}
+
+.stock-remaining {
+    text-align: center;
+    font-size: 0.875rem;
+}
+
+.stock-warning {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.stock-ok {
+    color: #198754;
 }
 
 @media (max-width: 768px) {
@@ -305,12 +330,33 @@ const TVA_RATE = COMPANY_DATA.tva_rate / 100;
 let lineIndex = {{ formset.total_form_count }};
 let customerSubscriptions = {};
 let currentCustomerId = null;
-let currentCustomerHasLegalInfo = false; // Track customer legal info status
+let currentCustomerHasLegalInfo = false;
+let productStockData = {}; // Store product stock information
+
+// Initialize due date for new invoices
+const dueDateInput = document.querySelector('input[name="due_date"]');
+const invoiceDateInput = document.querySelector('input[name="invoice_date"]');
+
+// Auto-update due date when invoice date changes
+invoiceDateInput.addEventListener('change', function() {
+    if (this.value) {
+        const invoiceDate = new Date(this.value);
+        const dueDate = new Date(invoiceDate);
+        dueDate.setMonth(dueDate.getMonth() + 1);
+        dueDateInput.value = dueDate.toISOString().split('T')[0];
+    }
+});
+
+// Set initial due date if empty
+if (!dueDateInput.value && invoiceDateInput.value) {
+    const invoiceDate = new Date(invoiceDateInput.value);
+    const dueDate = new Date(invoiceDate);
+    dueDate.setMonth(dueDate.getMonth() + 1);
+    dueDateInput.value = dueDate.toISOString().split('T')[0];
+}
 
 // Calculate timbre fiscal based on amount (HT + TVA)
-
 function calculateTimbreFiscal(amountHtPlusTva, paymentMethod) {
-    // Only apply timbre fiscal for cash payments
     if (paymentMethod !== 'cash') {
         return 0;
     }
@@ -318,11 +364,11 @@ function calculateTimbreFiscal(amountHtPlusTva, paymentMethod) {
     if (amountHtPlusTva < 300) {
         return 5.00;
     } else if (amountHtPlusTva < 30000) {
-        return amountHtPlusTva * 0.01; // 1%
+        return amountHtPlusTva * 0.01;
     } else if (amountHtPlusTva < 100000) {
-        return amountHtPlusTva * 0.015; // 1.5%
+        return amountHtPlusTva * 0.015;
     } else {
-        return amountHtPlusTva * 0.02; // 2%
+        return amountHtPlusTva * 0.02;
     }
 }
 
@@ -339,7 +385,7 @@ document.addEventListener('change', function(e) {
             hideSubscriptionInfo();
             customerSubscriptions = {};
             currentCustomerHasLegalInfo = false;
-            calculateTotals(); // Recalculate with updated TVA
+            calculateTotals();
         }
     }
 });
@@ -357,7 +403,6 @@ function checkCustomerLegalInfo(customerId) {
     .then(data => {
         currentCustomerHasLegalInfo = data.has_legal_info || false;
         
-        // Update TVA label based on legal info status
         const tvaLabel = document.getElementById('tva-label');
         if (tvaLabel) {
             if (currentCustomerHasLegalInfo) {
@@ -367,7 +412,7 @@ function checkCustomerLegalInfo(customerId) {
             }
         }
         
-        calculateTotals(); // Recalculate with updated TVA
+        calculateTotals();
     })
     .catch(error => {
         console.error('Error checking customer legal info:', error);
@@ -390,7 +435,6 @@ function loadCustomerSubscriptions(customerId) {
         customerSubscriptions = {};
         
         if (data.has_subscriptions) {
-            // Store subscriptions data
             data.subscriptions.forEach(sub => {
                 customerSubscriptions[sub.product_id] = sub;
             });
@@ -400,7 +444,6 @@ function loadCustomerSubscriptions(customerId) {
             hideSubscriptionInfo();
         }
         
-        // Update existing product lines with subscription info
         updateExistingLines();
     })
     .catch(error => {
@@ -454,13 +497,18 @@ function updateExistingLines() {
     });
 }
 
-// Add new invoice line with subscription support
+// Add new invoice line
 document.getElementById('addLineBtn').addEventListener('click', function() {
     const tbody = document.getElementById('invoice-lines-tbody');
     const totalForms = document.getElementById('id_invoiceline_set-TOTAL_FORMS');
     
     const newRow = tbody.insertRow();
     newRow.className = 'invoice-line-row';
+    
+    // Set current date/time for line_date
+    const now = new Date();
+    const currentDateTime = now.toISOString().slice(0, 16); // Format: YYYY-MM-DDTHH:MM
+    
     newRow.innerHTML = `
         <td>
             <select name="invoiceline_set-${lineIndex}-product" class="form-select product-select" id="id_invoiceline_set-${lineIndex}-product">
@@ -476,7 +524,9 @@ document.getElementById('addLineBtn').addEventListener('click', function() {
         <td><input type="text" name="invoiceline_set-${lineIndex}-unit" class="form-control" id="id_invoiceline_set-${lineIndex}-unit"></td>
         <td><input type="number" name="invoiceline_set-${lineIndex}-quantity" class="form-control quantity-input" step="0.01" id="id_invoiceline_set-${lineIndex}-quantity"></td>
         <td><input type="number" name="invoiceline_set-${lineIndex}-unit_price" class="form-control price-input" step="0.01" id="id_invoiceline_set-${lineIndex}-unit_price"></td>
-        <td class="line-total">0.00</td>
+        <td><input type="datetime-local" name="invoiceline_set-${lineIndex}-line_date" class="form-control" value="${currentDateTime}" id="id_invoiceline_set-${lineIndex}-line_date"></td>
+        <td class="line-total">0.00 DA</td>
+        <td class="stock-remaining text-muted">--</td>
         <td>
             <button type="button" class="btn btn-sm btn-danger remove-line">
                 <i class="fas fa-trash"></i>
@@ -509,7 +559,7 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Product selection change with subscription support
+// Product selection change handler
 document.addEventListener('change', function(e) {
     if (e.target.classList.contains('product-select')) {
         const productId = e.target.value;
@@ -523,20 +573,16 @@ document.addEventListener('change', function(e) {
     }
 });
 
-
-
-// Load product data with subscription support
+// Load product data with stock information
 function loadProductData(productId, row) {
     const descriptionField = row.querySelector('[name*="-description"]');
     const unitField = row.querySelector('[name*="-unit"]');
     const priceField = row.querySelector('[name*="-unit_price"]');
     const referenceField = row.querySelector('[name*="-reference"]');
     
-    // Clear fields first
     clearLineData(row);
     descriptionField.placeholder = 'Chargement...';
     
-    // Build URL with customer_id if available
     let url = `/invoices/api/product-data/?product_id=${productId}`;
     if (currentCustomerId) {
         url += `&customer_id=${currentCustomerId}`;
@@ -553,25 +599,29 @@ function loadProductData(productId, row) {
     .then(data => {
         descriptionField.placeholder = '';
         
-        // Populate basic product data
         if (data.description) descriptionField.value = data.description;
         if (data.unit) unitField.value = data.unit;
         if (data.code) referenceField.value = data.code;
         
+        // Store product stock data
+        productStockData[productId] = {
+            stock_quantity: data.stock_quantity || 0,
+            is_service: data.is_service || false,
+            stock_status: data.stock_status || 'N/A'
+        };
+        
         // Handle subscription pricing
         if (data.is_subscribed) {
             priceField.value = parseFloat(data.subscription_price).toFixed(2);
-            
-            // Add subscription badge
             addSubscriptionBadge(row, data);
-            
-            // Show quantity warning if needed
             showQuantityWarning(row, data);
         } else {
             priceField.value = parseFloat(data.unit_price).toFixed(2);
             removeSubscriptionBadge(row);
         }
         
+        // Update stock display
+        updateStockDisplay(row, productId);
         calculateLineTotal(row);
     })
     .catch(error => {
@@ -581,17 +631,52 @@ function loadProductData(productId, row) {
     });
 }
 
+// Update stock display
+function updateStockDisplay(row, productId) {
+    const stockCell = row.querySelector('.stock-remaining');
+    const quantityInput = row.querySelector('[name*="-quantity"]');
+    
+    if (!stockCell || !productStockData[productId]) return;
+    
+    const stockData = productStockData[productId];
+    const quantity = parseFloat(quantityInput.value) || 0;
+    
+    if (stockData.is_service) {
+        stockCell.innerHTML = '<span class="text-info">Service</span>';
+        stockCell.className = 'stock-remaining';
+        return;
+    }
+    
+    const remainingStock = stockData.stock_quantity - quantity;
+    stockCell.textContent = remainingStock.toFixed(2);
+    
+    // Color coding based on remaining stock
+    stockCell.className = 'stock-remaining';
+    if (remainingStock < 0) {
+        stockCell.classList.add('stock-warning');
+        stockCell.title = 'Stock insuffisant!';
+    } else if (remainingStock <= 10) {
+        stockCell.classList.add('text-warning');
+        stockCell.title = 'Stock faible';
+    } else {
+        stockCell.classList.add('stock-ok');
+        stockCell.title = 'Stock suffisant';
+    }
+}
+
 // Clear line data
 function clearLineData(row) {
     row.querySelector('[name*="-description"]').value = '';
     row.querySelector('[name*="-unit"]').value = '';
     row.querySelector('[name*="-unit_price"]').value = '';
     row.querySelector('[name*="-reference"]').value = '';
+    row.querySelector('.stock-remaining').textContent = '--';
+    row.querySelector('.stock-remaining').className = 'stock-remaining text-muted';
     removeSubscriptionBadge(row);
     calculateLineTotal(row);
 }
 
-// Add subscription badge to product field
+// Add subscription badge
 function addSubscriptionBadge(row, data) {
     const productCell = row.querySelector('td:first-child');
     let badge = productCell.querySelector('.subscription-badge');
@@ -609,14 +694,10 @@ function addSubscriptionBadge(row, data) {
 // Remove subscription badge
 function removeSubscriptionBadge(row) {
     const badge = row.querySelector('.subscription-badge');
-    if (badge) {
-        badge.remove();
-    }
+    if (badge) badge.remove();
     
     const warning = row.querySelector('.quantity-warning');
-    if (warning) {
-        warning.remove();
-    }
+    if (warning) warning.remove();
 }
 
 // Show quantity warning for subscriptions
@@ -651,7 +732,7 @@ function updateLineSubscriptionInfo(row, productId) {
     }
 }
 
-// Quantity input validation for subscriptions
+// Quantity input validation and stock update
 document.addEventListener('input', function(e) {
     if (e.target.classList.contains('quantity-input')) {
         const row = e.target.closest('tr');
@@ -659,8 +740,12 @@ document.addEventListener('input', function(e) {
         
         if (productSelect && productSelect.value) {
             const productId = productSelect.value;
-            const subscription = customerSubscriptions[productId];
             
+            // Update stock display
+            updateStockDisplay(row, productId);
+            
+            // Check subscription limits
+            const subscription = customerSubscriptions[productId];
             if (subscription) {
                 const quantity = parseFloat(e.target.value) || 0;
                 const remaining = parseFloat(subscription.remaining_quantity);
@@ -674,10 +759,12 @@ document.addEventListener('input', function(e) {
                 }
             }
         }
+        
+        calculateLineTotal(row);
     }
 });
 
-// Calculate line total
+// Calculate line total with proper formatting
 function calculateLineTotal(row) {
     const quantityInput = row.querySelector('.quantity-input') || row.querySelector('[name*="-quantity"]');
     const priceInput = row.querySelector('.price-input') || row.querySelector('[name*="-unit_price"]');
@@ -688,7 +775,14 @@ function calculateLineTotal(row) {
         const unitPrice = parseFloat(priceInput.value) || 0;
         const total = quantity * unitPrice;
         
-        totalCell.textContent = total.toFixed(2);
+        totalCell.textContent = total.toFixed(2) + ' DA';
+        
+        // Update stock display when quantity changes
+        const productSelect = row.querySelector('.product-select');
+        if (productSelect && productSelect.value) {
+            updateStockDisplay(row, productSelect.value);
+        }
+        
         calculateTotals();
     }
 }
@@ -708,19 +802,21 @@ function addLineEventListeners(row) {
     }
 }
 
-// Calculate invoice totals - UPDATED with automatic timbre calculation
-// Calculate invoice totals - UPDATED with payment method condition for timbre
+// Calculate invoice totals with automatic timbre calculation
 function calculateTotals() {
     let subtotal = 0;
     
     document.querySelectorAll('.invoice-line-row:not([style*="display: none"])').forEach(row => {
-        const lineTotal = parseFloat(row.querySelector('.line-total').textContent) || 0;
-        subtotal += lineTotal;
+        const totalCell = row.querySelector('.line-total');
+        if (totalCell) {
+            const lineTotal = parseFloat(totalCell.textContent.replace(' DA', '')) || 0;
+            subtotal += lineTotal;
+        }
     });
     
     const discountInput = document.getElementById('id_discount_amount');
-    const timbreInput = document.getElementById('id_timbre_fiscal'); // Hidden input
-    const timbreDisplayInput = document.getElementById('timbre-display-input'); // Display input
+    const timbreInput = document.getElementById('id_timbre_fiscal');
+    const timbreDisplayInput = document.getElementById('timbre-display-input');
     const otherTaxesInput = document.getElementById('id_other_taxes');
     const paymentMethodSelect = document.querySelector('[name="payment_method"]');
     
@@ -767,7 +863,7 @@ function calculateTotals() {
 // Payment method change handler
 document.addEventListener('change', function(e) {
     if (e.target.name === 'payment_method') {
-        calculateTotals(); // Recalculate when payment method changes
+        calculateTotals();
     }
 });
 
@@ -780,7 +876,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Add event listeners to existing rows
-    document.querySelectorAll('.invoice-line-row').forEach(addLineEventListeners);
+    document.querySelectorAll('.invoice-line-row').forEach(row => {
+        addLineEventListeners(row);
+        
+        // Calculate initial line totals for existing data
+        const quantityInput = row.querySelector('[name*="-quantity"]');
+        const priceInput = row.querySelector('[name*="-unit_price"]');
+        if (quantityInput && priceInput && (quantityInput.value || priceInput.value)) {
+            calculateLineTotal(row);
+        }
+    });
     
     // Add event listeners to payment method field
     const paymentMethodSelect = document.querySelector('[name="payment_method"]');
@@ -788,7 +893,7 @@ document.addEventListener('DOMContentLoaded', function() {
         paymentMethodSelect.addEventListener('change', calculateTotals);
     }
     
-    // Add event listeners to summary fields (exclude timbre - it's now automatic)
+    // Add event listeners to summary fields
     ['id_discount_amount', 'id_other_taxes'].forEach(id => {
         const element = document.getElementById(id);
         if (element) {

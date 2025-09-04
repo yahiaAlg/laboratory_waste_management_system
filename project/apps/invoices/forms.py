@@ -7,6 +7,16 @@ from django.core.exceptions import ValidationError
 from decimal import Decimal
 from .models import Invoice, InvoiceLine, Payment
 
+from django.utils import timezone
+from datetime import timedelta
+from dateutil.relativedelta import relativedelta
+from django import forms
+from django.db.models import Sum
+from django.forms import inlineformset_factory
+from django.core.exceptions import ValidationError
+from decimal import Decimal
+from .models import Invoice, InvoiceLine, Payment
+
 class InvoiceForm(forms.ModelForm):
     class Meta:
         model = Invoice
@@ -31,14 +41,31 @@ class InvoiceForm(forms.ModelForm):
         
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if not self.instance.pk and not self.initial.get('invoice_date'):
-            self.fields['invoice_date'].initial = timezone.now()
+        
+        # For new invoices
+        if not self.instance.pk:
+            today = timezone.now().date()
+            # Set invoice date to today
+            self.fields['invoice_date'].initial = today
+            # Set due date to one month from today
+            due_date = today + relativedelta(months=1)
+            self.fields['due_date'].initial = due_date
         else:
-            self.fields['invoice_date'].initial = self.instance.invoice_date if self.instance.invoice_date else timezone.now()
+            # For existing invoices, use existing dates or set defaults
+            if self.instance.invoice_date:
+                invoice_date = self.instance.invoice_date
+                self.fields['invoice_date'].initial = invoice_date
+            else:
+                invoice_date = timezone.now().date()
+                self.fields['invoice_date'].initial = invoice_date
+                
+            if not self.instance.due_date:
+                due_date = invoice_date + relativedelta(months=1)
+                self.fields['due_date'].initial = due_date
         
         # Add help text for automatic calculation
         self.fields['timbre_fiscal'].help_text = "Calculé automatiquement selon le montant HT + TVA"
-
+        
 class InvoiceLineForm(forms.ModelForm):
     class Meta:
         model = InvoiceLine
