@@ -1,3 +1,5 @@
+import json
+from pprint import pprint
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
@@ -77,7 +79,23 @@ def customer_report(request):
 def product_report(request):
     products = Product.objects.filter(is_active=True).select_related('category')
     
-    context = {'products': products}
+    products_data = []
+    for product in products:
+        products_data.append({
+            'code': product.code,
+            'name': product.name,
+            'category': product.category.name,
+            'price': float(product.unit_price),
+            'stock': float(product.stock_quantity),
+            'isService': product.is_service,
+            'hazardLevel': product.hazard_level,
+            'hazardLevelDisplay': product.get_hazard_level_display(),
+            'isActive': product.is_active,
+            'isLowStock': product.is_low_stock,
+            'unit': product.unit,
+        })
+    
+    context = {'products_data': json.dumps(products_data)}
     return render(request, 'reports/product_report.html', context)
 
 @login_required
