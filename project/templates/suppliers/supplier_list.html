@@ -8,9 +8,11 @@
     <!-- Page Header -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">Liste des fournisseurs</h1>
+        {% if request.user.role in 'admin' %}                        
         <a href="{% url 'suppliers:create' %}" class="btn btn-primary">
             <i class="fas fa-plus me-2"></i>Nouveau fournisseur
         </a>
+        {% endif %}
     </div>
     
     <!-- Search and Filters -->
@@ -79,13 +81,15 @@
                                         <a href="{% url 'suppliers:detail' supplier.pk %}" class="btn btn-outline-primary" title="Voir">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="{% url 'suppliers:update' supplier.pk %}" class="btn btn-outline-secondary" title="Modifier">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <a href="{% url 'suppliers:delete' supplier.pk %}" class="btn btn-outline-danger" title="Supprimer" 
-                                           data-confirm-delete="Êtes-vous sûr de vouloir supprimer ce fournisseur ?">
-                                            <i class="fas fa-trash"></i>
-                                        </a>
+                                        {% if request.user.role in 'admin' %}                        
+                                            <a href="{% url 'suppliers:update' supplier.pk %}" class="btn btn-outline-secondary" title="Modifier">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'suppliers:delete' supplier.pk %}" class="btn btn-outline-danger" title="Supprimer" 
+                                            data-confirm-delete="Êtes-vous sûr de vouloir supprimer ce fournisseur ?">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        {% endif %}                                        
                                     </div>
                                 </td>
                             </tr>

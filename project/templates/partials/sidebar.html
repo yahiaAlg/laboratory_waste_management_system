@@ -17,7 +17,7 @@
         </li>
         
         <!-- Invoicing - Admin and Manager only -->
-        {% if request.user.role in 'admin,manager' %}
+        
         <li class="menu-item">
             <a href="#" class="menu-link" data-bs-toggle="collapse" data-bs-target="#invoicesMenu">
                 <i class="fas fa-file-invoice"></i>
@@ -33,7 +33,7 @@
                 </ul>
             </div>
         </li>
-        {% endif %}
+        
         
         <!-- Customers - Admin and Manager only -->
         {% if request.user.role in 'admin,manager' %}
@@ -64,7 +64,7 @@
             <div class="collapse" id="inventoryMenu">
                 <ul class="submenu">
                     <li><a href="{% url 'inventory:product_list' %}">Produits/Services</a></li>
-                    {% if request.user.role in 'admin,manager' %}
+                    {% if request.user.role in 'admin' %}
                     <li><a href="{% url 'inventory:product_create' %}">Nouveau produit</a></li>
                     {% endif %}
                     <li><a href="{% url 'inventory:low_stock_report' %}">Stock faible</a></li>
@@ -92,7 +92,7 @@
         {% endif %}
         
         <!-- Reports - Admin and Manager only -->
-        {% if request.user.role in 'admin' %}
+        {% if request.user.role in 'admin,manager' %}
         <li class="menu-item">
             <a href="#" class="menu-link" data-bs-toggle="collapse" data-bs-target="#reportsMenu">
                 <i class="fas fa-chart-bar"></i>

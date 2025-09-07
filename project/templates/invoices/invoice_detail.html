@@ -19,10 +19,12 @@
             <a href="{% url 'invoices:print' invoice.pk %}" class="btn btn-success" target="_blank">
                 <i class="fas fa-print me-2"></i>Imprimer
             </a>
-            {% if invoice.status != 'paid' %}
-            <a href="{% url 'invoices:update' invoice.pk %}" class="btn btn-primary">
-                <i class="fas fa-edit me-2"></i>Modifier
-            </a>
+            {% if request.user.role in 'admin,manager' %}
+                {% if invoice.status != 'paid' %}
+                    <a href="{% url 'invoices:update' invoice.pk %}" class="btn btn-primary">
+                        <i class="fas fa-edit me-2"></i>Modifier
+                    </a>
+                {% endif %}
             {% endif %}
             <a href="{% url 'invoices:list' %}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left me-2"></i>Retour à la liste
@@ -608,15 +610,17 @@
                         <a href="{% url 'invoices:print' invoice.pk %}" class="btn btn-success" target="_blank">
                             <i class="fas fa-print me-2"></i>Imprimer la facture
                         </a>
-                        {% if invoice.status != 'paid' %}
-                        <a href="{% url 'invoices:update' invoice.pk %}" class="btn btn-primary">
-                            <i class="fas fa-edit me-2"></i>Modifier la facture
-                        </a>
-                        {% endif %}
-                        {% if balance_due > 0 %}
-                        <a href="{% url 'invoices:add_payment' invoice.pk %}" class="btn btn-info">
-                            <i class="fas fa-money-bill me-2"></i>Enregistrer un paiement
-                        </a>
+                        {% if request.user.role in 'admin,manager' %}
+                            {% if invoice.status != 'paid' %}
+                                <a href="{% url 'invoices:update' invoice.pk %}" class="btn btn-primary">
+                                    <i class="fas fa-edit me-2"></i>Modifier la facture
+                                </a>
+                            {% endif %}
+                            {% if balance_due > 0 %}
+                                <a href="{% url 'invoices:add_payment' invoice.pk %}" class="btn btn-info">
+                                    <i class="fas fa-money-bill me-2"></i>Enregistrer un paiement
+                                </a>
+                            {% endif %}
                         {% endif %}
                         {% if payments %}
                         <a href="{% url 'invoices:payment_history' invoice.pk %}" class="btn btn-outline-secondary">

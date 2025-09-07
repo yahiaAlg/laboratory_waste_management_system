@@ -170,10 +170,12 @@
                                         <a href="{% url 'invoices:detail' invoice.pk %}" class="btn btn-outline-primary" title="Voir">
                                             <i class="fas fa-eye"></i>
                                         </a>
+                                        {% if request.user.role in 'admin,manager' %}
                                         {% if invoice.status != 'paid' %}
                                         <a href="{% url 'invoices:update' invoice.pk %}" class="btn btn-outline-secondary" title="Modifier">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        {% endif %}
                                         {% endif %}
                                         <a href="{% url 'invoices:print' invoice.pk %}" class="btn btn-outline-success" title="Imprimer" target="_blank">
                                             <i class="fas fa-print"></i>

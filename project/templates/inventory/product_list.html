@@ -8,9 +8,11 @@
     <!-- Page Header -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">Produits et Services</h1>
+        {% if request.user.role not in 'manager' %}            
         <a href="{% url 'inventory:product_create' %}" class="btn btn-primary">
             <i class="fas fa-plus me-2"></i>Nouveau produit/service
         </a>
+        {% endif %}                
     </div>
     
     <!-- Search and Filters -->
@@ -144,14 +146,16 @@
                                         <a href="{% url 'inventory:product_detail' product.pk %}" class="btn btn-outline-primary" title="Voir">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="{% url 'inventory:product_update' product.pk %}" class="btn btn-outline-secondary" title="Modifier">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        {% if not product.is_service %}
-                                        <a href="{% url 'inventory:stock_movement_create_for_product' product.pk %}" class="btn btn-outline-success" title="Mouvement de stock">
-                                            <i class="fas fa-exchange-alt"></i>
-                                        </a>
-                                        {% endif %}
+                                        {% if request.user.role not in 'manager' %}                                                                                    
+                                            <a href="{% url 'inventory:product_update' product.pk %}" class="btn btn-outline-secondary" title="Modifier">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {% if not product.is_service %}
+                                                <a href="{% url 'inventory:stock_movement_create_for_product' product.pk %}" class="btn btn-outline-success" title="Mouvement de stock">
+                                                    <i class="fas fa-exchange-alt"></i>
+                                                </a>
+                                            {% endif %}
+                                        {% endif %}                                                                                        
                                         {% if user.is_superuser %}
                                         <button type="button" class="btn btn-outline-danger" title="Supprimer" 
                                                 onclick="confirmDelete('{{ product.name }}', '{% url 'inventory:product_delete' product.pk %}')">
@@ -199,9 +203,11 @@
                     <i class="fas fa-boxes fa-3x text-muted mb-3"></i>
                     <h5 class="text-muted">Aucun produit/service trouvé</h5>
                     <p class="text-muted">Commencez par ajouter votre premier produit ou service.</p>
+
                     <a href="{% url 'inventory:product_create' %}" class="btn btn-primary">
                         <i class="fas fa-plus me-2"></i>Ajouter un produit/service
                     </a>
+        
                 </div>
             {% endif %}
         </div>
