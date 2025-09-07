@@ -8,6 +8,7 @@
     </div>
     
     <ul class="sidebar-menu">
+        <!-- Dashboard - Available to all roles -->
         <li class="menu-item">
             <a href="{% url 'dashboard:index' %}" class="menu-link">
                 <i class="fas fa-tachometer-alt"></i>
@@ -15,6 +16,8 @@
             </a>
         </li>
         
+        <!-- Invoicing - Admin and Manager only -->
+        {% if request.user.role in 'admin,manager' %}
         <li class="menu-item">
             <a href="#" class="menu-link" data-bs-toggle="collapse" data-bs-target="#invoicesMenu">
                 <i class="fas fa-file-invoice"></i>
@@ -24,11 +27,16 @@
             <div class="collapse" id="invoicesMenu">
                 <ul class="submenu">
                     <li><a href="{% url 'invoices:list' %}">Liste des factures</a></li>
+                    {% if request.user.role == 'admin' %}
                     <li><a href="{% url 'invoices:create' %}">Nouvelle facture</a></li>
+                    {% endif %}
                 </ul>
             </div>
         </li>
+        {% endif %}
         
+        <!-- Customers - Admin and Manager only -->
+        {% if request.user.role in 'admin,manager' %}
         <li class="menu-item">
             <a href="#" class="menu-link" data-bs-toggle="collapse" data-bs-target="#customersMenu">
                 <i class="fas fa-users"></i>
@@ -38,11 +46,15 @@
             <div class="collapse" id="customersMenu">
                 <ul class="submenu">
                     <li><a href="{% url 'customers:list' %}">Liste des clients</a></li>
+                    {% if request.user.role == 'admin' %}
                     <li><a href="{% url 'customers:create' %}">Nouveau client</a></li>
+                    {% endif %}
                 </ul>
             </div>
         </li>
+        {% endif %}
         
+        <!-- Inventory - Available to all roles -->
         <li class="menu-item">
             <a href="#" class="menu-link" data-bs-toggle="collapse" data-bs-target="#inventoryMenu">
                 <i class="fas fa-boxes"></i>
@@ -52,12 +64,16 @@
             <div class="collapse" id="inventoryMenu">
                 <ul class="submenu">
                     <li><a href="{% url 'inventory:product_list' %}">Produits/Services</a></li>
+                    {% if request.user.role in 'admin,manager' %}
                     <li><a href="{% url 'inventory:product_create' %}">Nouveau produit</a></li>
+                    {% endif %}
                     <li><a href="{% url 'inventory:low_stock_report' %}">Stock faible</a></li>
                 </ul>
             </div>
         </li>
         
+        <!-- Suppliers - Admin and Manager only -->
+        {% if request.user.role in 'admin,manager' %}
         <li class="menu-item">
             <a href="#" class="menu-link" data-bs-toggle="collapse" data-bs-target="#suppliersMenu">
                 <i class="fas fa-truck"></i>
@@ -67,11 +83,16 @@
             <div class="collapse" id="suppliersMenu">
                 <ul class="submenu">
                     <li><a href="{% url 'suppliers:list' %}">Liste des fournisseurs</a></li>
+                    {% if request.user.role == 'admin' %}
                     <li><a href="{% url 'suppliers:create' %}">Nouveau fournisseur</a></li>
+                    {% endif %}
                 </ul>
             </div>
         </li>
+        {% endif %}
         
+        <!-- Reports - Admin and Manager only -->
+        {% if request.user.role in 'admin' %}
         <li class="menu-item">
             <a href="#" class="menu-link" data-bs-toggle="collapse" data-bs-target="#reportsMenu">
                 <i class="fas fa-chart-bar"></i>
@@ -87,12 +108,16 @@
                 </ul>
             </div>
         </li>
+        {% endif %}
         
+        <!-- Settings - Admin only -->
+        {% if request.user.role == 'admin' %}
         <li class="menu-item">
             <a href="{% url 'company:settings' %}" class="menu-link">
                 <i class="fas fa-cog"></i>
                 <span>Paramètres</span>
             </a>
         </li>
+        {% endif %}
     </ul>
 </nav>

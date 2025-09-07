@@ -210,84 +210,97 @@
                     <div class="card-body">
                         {{ formset.management_form }}
                         
-                        <div id="subscription-forms">
+                        <!-- Bulk selection controls -->
+                        <div class="mb-3 border-bottom pb-2">
+                            <div class="form-check d-inline-block me-3">
+                                <input type="checkbox" id="select-all-subscriptions" class="form-check-input">
+                                <label class="form-check-label" for="select-all-subscriptions">
+                                    Sélectionner tout
+                                </label>
+                            </div>
+                            <button type="button" id="delete-selected-subscriptions" class="btn btn-sm btn-outline-danger" style="display: none;">
+                                <i class="fas fa-trash-alt me-2"></i>Supprimer sélectionnés
+                            </button>
+                        </div>
+                        
+                        <div id="subscription-forms" class="overflow-auto" style="max-height: 800px;">
                             {% for form in formset %}
-                                <div class="subscription-form border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}">
-                                    <div class="row align-items-end">
-                                        <div class="col-md-3">
-                                            <div class="mb-3">
-                                                <label class="form-label">Produit</label>
-                                                {{ form.product }}
-                                                {% if form.product.errors %}
-                                                    <div class="text-danger small">{{ form.product.errors.0 }}</div>
-                                                {% endif %}
-                                            </div>
+                                <div class="subscription-form border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}" style="min-width: 1080px;">
+                                    <!-- Selection checkbox -->
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="form-check me-3">
+                                            <input type="checkbox" class="form-check-input subscription-select" 
+                                                id="select-subscription-{{ forloop.counter0 }}">
+                                            <label class="form-check-label text-muted small" 
+                                                for="select-subscription-{{ forloop.counter0 }}">
+                                                Sélectionner
+                                            </label>
                                         </div>
-                                        <div class="col-md-2">
-                                            <div class="mb-3">
-                                                <label class="form-label">Montant (DA)</label>
-                                                {{ form.fixed_payment_amount }}
-                                                {% if form.fixed_payment_amount.errors %}
-                                                    <div class="text-danger small">{{ form.fixed_payment_amount.errors.0 }}</div>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <div class="mb-3">
-                                                <label class="form-label">Qté max</label>
-                                                {{ form.max_quantity_allowed }}
-                                                {% if form.max_quantity_allowed.errors %}
-                                                    <div class="text-danger small">{{ form.max_quantity_allowed.errors.0 }}</div>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <div class="mb-3">
-                                                <label class="form-label">Cycle</label>
-                                                {{ form.billing_cycle }}
-                                                {% if form.billing_cycle.errors %}
-                                                    <div class="text-danger small">{{ form.billing_cycle.errors.0 }}</div>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <div class="mb-3">
-                                                <label class="form-label">Début</label>
-                                                {{ form.start_date }}
-                                                {% if form.start_date.errors %}
-                                                    <div class="text-danger small">{{ form.start_date.errors.0 }}</div>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        <div class="col-md-1">
-                                            <div class="mb-3 text-center">
-                                                {% if form.DELETE %}
-                                                    {{ form.DELETE }}
-                                                    <label class="form-label text-danger small">Suppr.</label>
-                                                {% endif %}
-                                                {% if not forloop.first %}
-                                                    <button type="button" class="btn btn-sm btn-outline-danger remove-subscription" title="Supprimer">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                {% endif %}
-                                            </div>
+                                        <div class="ms-auto">
+                                            {% if form.DELETE %}
+                                                {{ form.DELETE }}
+                                            {% endif %}
+                                            <button type="button" class="btn btn-sm btn-outline-danger remove-single-subscription" 
+                                                    title="Supprimer cet abonnement">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
                                         </div>
                                     </div>
                                     
-                                    <div class="row">
-                                        <div class="col-md-3">
-                                            <div class="mb-3">
-                                                <label class="form-label">Date fin (optionnel)</label>
-                                                {{ form.end_date }}
-                                                {% if form.end_date.errors %}
-                                                    <div class="text-danger small">{{ form.end_date.errors.0 }}</div>
-                                                {% endif %}
-                                            </div>
+                                    <!-- Horizontal form layout -->
+                                    <div class="d-flex gap-3 align-items-end flex-nowrap">
+                                        <div style="min-width: 200px;">
+                                            <label class="form-label">Produit</label>
+                                            {{ form.product }}
+                                            {% if form.product.errors %}
+                                                <div class="text-danger small">{{ form.product.errors.0 }}</div>
+                                            {% endif %}
                                         </div>
-                                        <div class="col-md-2">
-                                            <div class="form-check mt-4">
+                                        
+                                        <div style="min-width: 120px;">
+                                            <label class="form-label">Montant (DA)</label>
+                                            {{ form.fixed_payment_amount }}
+                                            {% if form.fixed_payment_amount.errors %}
+                                                <div class="text-danger small">{{ form.fixed_payment_amount.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div style="min-width: 100px;">
+                                            <label class="form-label">Qté max</label>
+                                            {{ form.max_quantity_allowed }}
+                                            {% if form.max_quantity_allowed.errors %}
+                                                <div class="text-danger small">{{ form.max_quantity_allowed.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div style="min-width: 120px;">
+                                            <label class="form-label">Cycle</label>
+                                            {{ form.billing_cycle }}
+                                            {% if form.billing_cycle.errors %}
+                                                <div class="text-danger small">{{ form.billing_cycle.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div style="min-width: 130px;">
+                                            <label class="form-label">Début</label>
+                                            {{ form.start_date }}
+                                            {% if form.start_date.errors %}
+                                                <div class="text-danger small">{{ form.start_date.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div style="min-width: 130px;">
+                                            <label class="form-label">Date fin</label>
+                                            {{ form.end_date }}
+                                            {% if form.end_date.errors %}
+                                                <div class="text-danger small">{{ form.end_date.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div style="min-width: 70px;">
+                                            <div class="form-check">
                                                 {{ form.is_active }}
-                                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                                <label class="form-check-label small" for="{{ form.is_active.id_for_label }}">
                                                     Actif
                                                 </label>
                                             </div>
@@ -301,7 +314,7 @@
                             {% endfor %}
                         </div>
                         
-                        <div class="d-flex gap-2">
+                        <div class="d-flex gap-2 mt-2">
                             <button type="button" id="add-subscription" class="btn btn-outline-success btn-sm">
                                 <i class="fas fa-plus me-2"></i>Ajouter un abonnement
                             </button>
@@ -412,6 +425,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const addSubscriptionBtn = document.getElementById('add-subscription');
     const clearAllBtn = document.getElementById('clear-all-subscriptions');
     const subscriptionForms = document.getElementById('subscription-forms');
+    const selectAllCheckbox = document.getElementById('select-all-subscriptions');
+    const deleteSelectedBtn = document.getElementById('delete-selected-subscriptions');
     
     // Track initial subscriber state
     const initialSubscriberState = subscriberCheckbox.checked;
@@ -425,11 +440,9 @@ document.addEventListener('DOMContentLoaded', function() {
             updateClearAllButtonVisibility();
         } else {
             subscriptionsSection.style.display = 'none';
-            // Mark all existing subscriptions for deletion when unchecking subscriber
             markAllForDeletion();
         }
         
-        // Show warning if unchecking and there were existing subscriptions
         if (initialSubscriberState && !subscriberCheckbox.checked && hasExistingSubscriptions()) {
             subscriptionWarning.style.display = 'block';
         } else {
@@ -438,7 +451,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function hasExistingSubscriptions() {
-        // Check if there are any forms with existing data (ID fields)
         const existingForms = document.querySelectorAll('input[name$="-id"]');
         return Array.from(existingForms).some(input => input.value);
     }
@@ -455,6 +467,21 @@ document.addEventListener('DOMContentLoaded', function() {
         clearAllBtn.style.display = visibleForms.length > 1 ? 'inline-block' : 'none';
     }
     
+    function updateSelectionControls() {
+        const allCheckboxes = document.querySelectorAll('.subscription-select');
+        const visibleCheckboxes = Array.from(allCheckboxes).filter(cb => 
+            !cb.closest('.subscription-form').style.display.includes('none')
+        );
+        const checkedCount = visibleCheckboxes.filter(cb => cb.checked).length;
+        
+        // Update select all checkbox
+        selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < visibleCheckboxes.length;
+        selectAllCheckbox.checked = checkedCount > 0 && checkedCount === visibleCheckboxes.length;
+        
+        // Show/hide delete selected button
+        deleteSelectedBtn.style.display = checkedCount > 0 ? 'inline-block' : 'none';
+    }
+    
     function clearAllSubscriptions() {
         const forms = document.querySelectorAll('.subscription-form');
         forms.forEach((form, index) => {
@@ -462,23 +489,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Keep first form but clear its values
                 const inputs = form.querySelectorAll('input:not([type="hidden"]), select');
                 inputs.forEach(input => {
-                    if (input.type === 'checkbox') {
+                    if (input.type === 'checkbox' && !input.classList.contains('subscription-select')) {
                         input.checked = input.name.includes('is_active');
                     } else if (input.type === 'date' && input.name.includes('start_date')) {
                         input.value = today;
-                    } else {
+                    } else if (!input.classList.contains('subscription-select')) {
                         input.value = '';
                     }
                 });
             } else {
-                // Mark for deletion or remove
-                const deleteCheckbox = form.querySelector('input[name$="-DELETE"]');
-                if (deleteCheckbox) {
-                    deleteCheckbox.checked = true;
-                    form.style.display = 'none';
-                } else {
-                    form.remove();
-                }
+                deleteSubscriptionForm(form);
             }
         });
         
@@ -487,26 +507,67 @@ document.addEventListener('DOMContentLoaded', function() {
         totalForms.value = '1';
         
         updateClearAllButtonVisibility();
+        updateSelectionControls();
+    }
+    
+    function deleteSubscriptionForm(form) {
+        const deleteCheckbox = form.querySelector('input[name$="-DELETE"]');
+        if (deleteCheckbox) {
+            deleteCheckbox.checked = true;
+            form.style.display = 'none';
+        } else {
+            form.remove();
+        }
+    }
+    
+    function deleteSelectedSubscriptions() {
+        const selectedCheckboxes = document.querySelectorAll('.subscription-select:checked');
+        let deletedCount = 0;
+        
+        selectedCheckboxes.forEach(checkbox => {
+            const form = checkbox.closest('.subscription-form');
+            deleteSubscriptionForm(form);
+            deletedCount++;
+        });
+        
+        // If all forms were deleted, ensure we have at least one empty form
+        const visibleForms = document.querySelectorAll('.subscription-form:not([style*="display: none"])');
+        if (visibleForms.length === 0) {
+            addSubscriptionForm();
+        }
+        
+        updateClearAllButtonVisibility();
+        updateSelectionControls();
+        
+        if (deletedCount > 0) {
+            const message = deletedCount === 1 ? '1 abonnement supprimé' : `${deletedCount} abonnements supprimés`;
+            // You can replace this with a toast notification if available
+            alert(message);
+        }
     }
     
     function addSubscriptionForm() {
         const totalForms = document.querySelector('#id_subscriptions-TOTAL_FORMS');
         const formCount = parseInt(totalForms.value);
         
-        // Clone the first form and update its indices
         const firstForm = document.querySelector('.subscription-form');
         const emptyForm = firstForm.cloneNode(true);
         const formRegex = RegExp(`subscriptions-(\\d){1}-`, 'g');
         
         emptyForm.innerHTML = emptyForm.innerHTML.replace(formRegex, `subscriptions-${formCount}-`);
         emptyForm.setAttribute('data-form-index', formCount);
-        emptyForm.style.display = 'block'; // Ensure it's visible
+        emptyForm.style.display = 'block';
         
         // Clear values and set defaults
         const inputs = emptyForm.querySelectorAll('input, select');
         inputs.forEach(input => {
             if (input.type === 'checkbox') {
-                input.checked = input.name.includes('is_active');
+                if (input.classList.contains('subscription-select')) {
+                    input.checked = false;
+                    input.id = `select-subscription-${formCount}`;
+                } else {
+                    input.checked = input.name.includes('is_active');
+                }
             } else if (input.type === 'date' && input.name.includes('start_date')) {
                 input.value = today;
             } else if (input.type !== 'hidden') {
@@ -514,56 +575,76 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Ensure remove button exists
-        let removeBtn = emptyForm.querySelector('.remove-subscription');
-        if (!removeBtn) {
-            const lastCol = emptyForm.querySelector('.col-md-1 .mb-3');
-            const btnHtml = `<button type="button" class="btn btn-sm btn-outline-danger remove-subscription mt-2" title="Supprimer">
-                                <i class="fas fa-trash"></i>
-                            </button>`;
-            lastCol.insertAdjacentHTML('beforeend', btnHtml);
-            removeBtn = emptyForm.querySelector('.remove-subscription');
+        // Update selection checkbox label
+        const selectLabel = emptyForm.querySelector('.form-check-label');
+        if (selectLabel) {
+            selectLabel.setAttribute('for', `select-subscription-${formCount}`);
         }
         
         subscriptionForms.appendChild(emptyForm);
         totalForms.value = formCount + 1;
         
-        // Attach remove handler to new form
-        attachRemoveHandler(emptyForm);
+        attachEventHandlers(emptyForm);
         updateClearAllButtonVisibility();
+        updateSelectionControls();
     }
     
-    function attachRemoveHandler(form) {
-        const removeBtn = form.querySelector('.remove-subscription');
+    function attachEventHandlers(form) {
+        // Individual delete button
+        const removeBtn = form.querySelector('.remove-single-subscription');
         if (removeBtn) {
             removeBtn.addEventListener('click', function() {
-                // Mark for deletion if editing existing, otherwise just remove
-                const deleteCheckbox = form.querySelector('input[name$="-DELETE"]');
-                if (deleteCheckbox) {
-                    deleteCheckbox.checked = true;
-                    form.style.display = 'none';
-                } else {
-                    form.remove();
-                    // Update form count
-                    const totalForms = document.querySelector('#id_subscriptions-TOTAL_FORMS');
-                    totalForms.value = parseInt(totalForms.value) - 1;
+                if (confirm('Êtes-vous sûr de vouloir supprimer cet abonnement ?')) {
+                    deleteSubscriptionForm(form);
+                    updateClearAllButtonVisibility();
+                    updateSelectionControls();
                 }
-                updateClearAllButtonVisibility();
             });
+        }
+        
+        // Selection checkbox
+        const selectCheckbox = form.querySelector('.subscription-select');
+        if (selectCheckbox) {
+            selectCheckbox.addEventListener('change', updateSelectionControls);
         }
     }
     
-    // Initialize event handlers
+    // Event listeners
     subscriberCheckbox.addEventListener('change', toggleSubscriberFields);
     addSubscriptionBtn.addEventListener('click', addSubscriptionForm);
+    
     clearAllBtn.addEventListener('click', function() {
         if (confirm('Êtes-vous sûr de vouloir vider tous les abonnements ?')) {
             clearAllSubscriptions();
         }
     });
     
-    // Attach remove handlers to existing forms
-    document.querySelectorAll('.subscription-form').forEach(attachRemoveHandler);
+    selectAllCheckbox.addEventListener('change', function() {
+        const allCheckboxes = document.querySelectorAll('.subscription-select');
+        const visibleCheckboxes = Array.from(allCheckboxes).filter(cb => 
+            !cb.closest('.subscription-form').style.display.includes('none')
+        );
+        
+        visibleCheckboxes.forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+        });
+        
+        updateSelectionControls();
+    });
+    
+    deleteSelectedBtn.addEventListener('click', function() {
+        const selectedCount = document.querySelectorAll('.subscription-select:checked').length;
+        const message = selectedCount === 1 
+            ? 'Êtes-vous sûr de vouloir supprimer cet abonnement ?' 
+            : `Êtes-vous sûr de vouloir supprimer ces ${selectedCount} abonnements ?`;
+            
+        if (confirm(message)) {
+            deleteSelectedSubscriptions();
+        }
+    });
+    
+    // Attach handlers to existing forms
+    document.querySelectorAll('.subscription-form').forEach(attachEventHandlers);
     
     // Set default start date for existing forms if empty
     document.querySelectorAll('input[name$="-start_date"]').forEach(input => {
@@ -572,15 +653,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Initialize on page load
+    // Initialize
     toggleSubscriberFields();
+    updateSelectionControls();
     
     // Form validation enhancement
     const form = document.querySelector('form');
     form.addEventListener('submit', function(e) {
         let isValid = true;
         
-        // Validate subscription forms if subscriber is checked
         if (subscriberCheckbox.checked) {
             const visibleForms = document.querySelectorAll('.subscription-form:not([style*="display: none"])');
             visibleForms.forEach(subscriptionForm => {
@@ -588,7 +669,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const amountInput = subscriptionForm.querySelector('input[name$="-fixed_payment_amount"]');
                 const quantityInput = subscriptionForm.querySelector('input[name$="-max_quantity_allowed"]');
                 
-                // If product is selected, ensure amount and quantity are filled
                 if (productSelect && productSelect.value && 
                     (!amountInput.value || !quantityInput.value)) {
                     
